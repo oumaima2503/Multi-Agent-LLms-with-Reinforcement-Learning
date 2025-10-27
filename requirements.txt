@@ -5,7 +5,7 @@ numpy
 stable-baselines3
 tqdm
 wandb
-
+tf_keras
 pandas
 matplotlib
 seaborn
