@@ -23,32 +23,44 @@ def prepare_researcher_data(limit=5000):
     # 1. HotpotQA
     print("Chargement et traitement de HotpotQA...")
     try:
-        ds_hotpot = load_dataset("hotpotqa", "distractor", split=f'train[:{limit//2}]') 
+        # HotpotQA fonctionne, les clés 'question' et 'answer' sont correctes.
+        ds_hotpot = load_dataset("hotpotqa/hotpot_qa", "distractor", split=f'train[:{limit//2}]') 
         for example in tqdm(ds_hotpot, desc="Processing HotpotQA"):
             if example['answer']:
                 all_examples.append(format_researcher_example(example['question'], example['answer']))
     except Exception as e:
         print(f"Erreur lors du chargement de HotpotQA: {e}")
 
-    # 2. Natural Questions (NQ)
+    # 2. Natural Questions (NQ) - CORRECTION FINALE (NQ)
     print("Chargement et traitement de Natural Questions...")
     try:
         ds_nq = load_dataset("sentence-transformers/natural-questions", split=f'train[:{limit}]')
         for example in tqdm(ds_nq, desc="Processing Natural Questions"):
-            if example['answer_text'] and example['question_text']:
-                # Utiliser la première réponse courte comme réponse factuelle
-                all_examples.append(format_researcher_example(example['question_text'], example['answer_text'][0]))
+            # Correction: Changement de 'question_text' (qui causait l'erreur) à 'question'.
+            # Le champ 'answer' est un dictionnaire contenant 'answer_text' qui est une liste.
+            question = example.get('question', example.get('question_text')) # Tente de récupérer 'question' puis 'question_text'
+            
+            if question and 'answer' in example and example['answer']['answer_text']:
+                 # On prend la première réponse courte disponible dans la liste
+                answer_texts = example['answer']['answer_text']
+                if answer_texts:
+                    # Ici, on utilise question au lieu de example['question_text']
+                    all_examples.append(format_researcher_example(question, answer_texts[0]))
     except Exception as e:
         print(f"Erreur lors du chargement de NQ: {e}")
 
-    # 3. ELI5 (pour les explications concises)
+    # 3. ELI5 (pour les explications concises) - CORRECTION FINALE (ELI5)
     print("Chargement et traitement de ELI5...")
     try:
         ds_eli5 = load_dataset("sentence-transformers/eli5", split=f'train[:{limit}]')
         for example in tqdm(ds_eli5, desc="Processing ELI5"):
-            # Utiliser le titre comme question et la première réponse longue/synthétisée
-            if example['answers']['text'] and example['title']:
-                all_examples.append(format_researcher_example(example['title'], example['answers']['text'][0]))
+            # Correction: Changement de 'title' (qui causait l'erreur) à 'q_title' ou 'title' avec fallback.
+            question = example.get('q_title', example.get('title')) # Tente de récupérer 'q_title' puis 'title'
+            
+            # On s'assure que 'answers' est présent et que la liste 'text' n'est pas vide.
+            if question and 'answers' in example and 'text' in example['answers'] and example['answers']['text']:
+                 # Utiliser la première réponse longue/synthétisée
+                all_examples.append(format_researcher_example(question, example['answers']['text'][0]))
     except Exception as e:
         print(f"Erreur lors du chargement de ELI5: {e}")
 
