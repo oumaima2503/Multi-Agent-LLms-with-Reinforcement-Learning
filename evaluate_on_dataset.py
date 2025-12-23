@@ -10,7 +10,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import json
 import time
 from test_magrpo_agent import test_magrpo_agent
-from compare_sft_magrpo import test_agent_with_checkpoint
+from Compared_sft_magrpo.compare_sft_magrpo import test_agent_with_checkpoint
 
 def evaluate_on_dataset(agent_name: str, dataset_path: str, checkpoint_type: str = "magrpo", epoch: int = 20, max_samples: int = None):
     """
@@ -137,7 +137,7 @@ def compare_sft_vs_magrpo(agent_name: str, dataset_path: str, epochs: list = [10
         # En-tête
         header = f"{'Métrique':<25} {'SFT':<15} "
         for epoch in epochs:
-            header += f"MAGRPO E{epoch}:<15} "
+            header += f"MAGRPO E{epoch}:<15}     "
         print(header.rstrip())
         print(f"{'-'*70}")
         

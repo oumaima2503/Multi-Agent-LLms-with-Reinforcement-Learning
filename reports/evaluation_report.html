@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Évaluation Globale - SFT vs MAGRPO</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background: #f5f5f5; }
+        h1, h2 { color: #333; border-bottom: 3px solid #4CAF50; padding-bottom: 10px; }
+        .summary { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; background: white; margin: 20px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        th { background: #4CAF50; color: white; padding: 12px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #ddd; }
+        tr:hover { background: #f5f5f5; }
+        .success { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+        .warning { color: orange; font-weight: bold; }
+        .metric-box { display: inline-block; margin: 10px; padding: 15px; background: white; border-radius: 8px; min-width: 200px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .metric-value { font-size: 24px; font-weight: bold; color: #4CAF50; }
+        .metric-label { font-size: 12px; color: #666; margin-top: 5px; }
+        img { max-width: 100%; height: auto; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .agent-section { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #4CAF50; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <h1>📊 Rapport Complet d'Évaluation - SFT vs MAGRPO</h1>
+    <p>Généré: 2025-12-23 04:48:27</p>
+    
+    <div class="summary">
+        <h2>📈 Vue d'Ensemble Globale</h2>
+        <div class="metric-box">
+            <div class="metric-value">4</div>
+            <div class="metric-label">Agents Évalués</div>
+        </div>
+        <div class="metric-box">
+            <div class="metric-value">4</div>
+            <div class="metric-label">Checkpoints (SFT + 3 MAGRPO)</div>
+        </div>
+        <div class="metric-box">
+            <div class="metric-value">16</div>
+            <div class="metric-label">Tests Totaux</div>
+        </div>
+    </div>
+
+    <div class="agent-section">
+        <h2>🤖 Agent: ORCHESTRATOR</h2>
+        <div class="metric-box">
+            <div class="metric-value">100.0</div>
+            <div class="metric-label">Reward Moyen</div>
+        </div>
+        <div class="metric-box">
+            <div class="metric-value">73.75%</div>
+            <div class="metric-label">Qualité Moyenne</div>
+        </div>
+        <div class="metric-box">
+            <div class="metric-value">100%</div>
+            <div class="metric-label">Taux de Succès</div>
+        </div>
+        <h3>Tableau Détaillé</h3>
+        <table>
+            <tr>
+                <th>Checkpoint</th>
+                <th>Succès</th>
+                <th>JSON</th>
+                <th>Clés OK</th>
+                <th>Reward</th>
+                <th>Qualité</th>
+                <th>Temps (s)</th>
+            </tr>
+
+            <tr>
+                <td>SFT</td>
+                <td class="success">✅</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>100.0</td>
+                <td>94.00%</td>
+                <td>93.38</td>
+            </tr>
+
+            <tr>
+                <td>MAGRPO-E10</td>
+                <td class="success">✅</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>100.0</td>
+                <td>67.00%</td>
+                <td>266.33</td>
+            </tr>
+
+            <tr>
+                <td>MAGRPO-E15</td>
+                <td class="success">✅</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>100.0</td>
+                <td>67.00%</td>
+                <td>198.90</td>
+            </tr>
+
+            <tr>
+                <td>MAGRPO-E20</td>
+                <td class="success">✅</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>100.0</td>
+                <td>67.00%</td>
+                <td>165.23</td>
+            </tr>
+
+        </table>
+        <h3>Visualisations</h3>
+        <img src="orchestrator\orchestrator_01_reward.png" alt="Graph 1">
+        <img src="orchestrator\orchestrator_02_time.png" alt="Graph 2">
+        <img src="orchestrator\orchestrator_03_quality.png" alt="Graph 3">
+        <img src="orchestrator\orchestrator_04_metrics.png" alt="Graph 4">
+        <img src="orchestrator\orchestrator_05_quality_components.png" alt="Graph 5">
+
+    </div>
+
+    <div class="agent-section">
+        <h2>🤖 Agent: RESEARCHER</h2>
+        <div class="metric-box">
+            <div class="metric-value">100.0</div>
+            <div class="metric-label">Reward Moyen</div>
+        </div>
+        <div class="metric-box">
+            <div class="metric-value">70.75%</div>
+            <div class="metric-label">Qualité Moyenne</div>
+        </div>
+        <div class="metric-box">
+            <div class="metric-value">100%</div>
+            <div class="metric-label">Taux de Succès</div>
+        </div>
+        <h3>Tableau Détaillé</h3>
+        <table>
+            <tr>
+                <th>Checkpoint</th>
+                <th>Succès</th>
+                <th>JSON</th>
+                <th>Clés OK</th>
+                <th>Reward</th>
+                <th>Qualité</th>
+                <th>Temps (s)</th>
+            </tr>
+
+            <tr>
+                <td>SFT</td>
+                <td class="success">✅</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>100.0</td>
+                <td>73.00%</td>
+                <td>18.98</td>
+            </tr>
+
+            <tr>
+                <td>MAGRPO-E10</td>
+                <td class="success">✅</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>100.0</td>
+                <td>70.00%</td>
+                <td>230.74</td>
+            </tr>
+
+            <tr>
+                <td>MAGRPO-E15</td>
+                <td class="success">✅</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>100.0</td>
+                <td>70.00%</td>
+                <td>237.35</td>
+            </tr>
+
+            <tr>
+                <td>MAGRPO-E20</td>
+                <td class="success">✅</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>100.0</td>
+                <td>70.00%</td>
+                <td>140.78</td>
+            </tr>
+
+        </table>
+        <h3>Visualisations</h3>
+        <img src="researcher\researcher_01_reward.png" alt="Graph 1">
+        <img src="researcher\researcher_02_time.png" alt="Graph 2">
+        <img src="researcher\researcher_03_quality.png" alt="Graph 3">
+        <img src="researcher\researcher_04_metrics.png" alt="Graph 4">
+        <img src="researcher\researcher_05_quality_components.png" alt="Graph 5">
+
+    </div>
+
+    <div class="agent-section">
+        <h2>🤖 Agent: CODE_WRITER</h2>
+        <div class="metric-box">
+            <div class="metric-value">100.0</div>
+            <div class="metric-label">Reward Moyen</div>
+        </div>
+        <div class="metric-box">
+            <div class="metric-value">70.81%</div>
+            <div class="metric-label">Qualité Moyenne</div>
+        </div>
+        <div class="metric-box">
+            <div class="metric-value">100%</div>
+            <div class="metric-label">Taux de Succès</div>
+        </div>
+        <h3>Tableau Détaillé</h3>
+        <table>
+            <tr>
+                <th>Checkpoint</th>
+                <th>Succès</th>
+                <th>JSON</th>
+                <th>Clés OK</th>
+                <th>Reward</th>
+                <th>Qualité</th>
+                <th>Temps (s)</th>
+            </tr>
+
+            <tr>
+                <td>SFT</td>
+                <td class="success">✅</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>100.0</td>
+                <td>67.00%</td>
+                <td>27.61</td>
+            </tr>
+
+            <tr>
+                <td>MAGRPO-E10</td>
+                <td class="success">✅</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>100.0</td>
+                <td>72.08%</td>
+                <td>390.50</td>
+            </tr>
+
+            <tr>
+                <td>MAGRPO-E15</td>
+                <td class="success">✅</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>100.0</td>
+                <td>72.08%</td>
+                <td>350.29</td>
+            </tr>
+
+            <tr>
+                <td>MAGRPO-E20</td>
+                <td class="success">✅</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>100.0</td>
+                <td>72.08%</td>
+                <td>392.63</td>
+            </tr>
+
+        </table>
+        <h3>Visualisations</h3>
+        <img src="code_writer\code_writer_01_reward.png" alt="Graph 1">
+        <img src="code_writer\code_writer_02_time.png" alt="Graph 2">
+        <img src="code_writer\code_writer_03_quality.png" alt="Graph 3">
+        <img src="code_writer\code_writer_04_metrics.png" alt="Graph 4">
+        <img src="code_writer\code_writer_05_quality_components.png" alt="Graph 5">
+
+    </div>
+
+    <div class="agent-section">
+        <h2>🤖 Agent: CRITIC</h2>
+        <div class="metric-box">
+            <div class="metric-value">85.0</div>
+            <div class="metric-label">Reward Moyen</div>
+        </div>
+        <div class="metric-box">
+            <div class="metric-value">62.75%</div>
+            <div class="metric-label">Qualité Moyenne</div>
+        </div>
+        <div class="metric-box">
+            <div class="metric-value">100%</div>
+            <div class="metric-label">Taux de Succès</div>
+        </div>
+        <h3>Tableau Détaillé</h3>
+        <table>
+            <tr>
+                <th>Checkpoint</th>
+                <th>Succès</th>
+                <th>JSON</th>
+                <th>Clés OK</th>
+                <th>Reward</th>
+                <th>Qualité</th>
+                <th>Temps (s)</th>
+            </tr>
+
+            <tr>
+                <td>SFT</td>
+                <td class="success">✅</td>
+                <td>✅</td>
+                <td>❌</td>
+                <td>40.0</td>
+                <td>50.00%</td>
+                <td>173.68</td>
+            </tr>
+
+            <tr>
+                <td>MAGRPO-E10</td>
+                <td class="success">✅</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>100.0</td>
+                <td>67.00%</td>
+                <td>117.37</td>
+            </tr>
+
+            <tr>
+                <td>MAGRPO-E15</td>
+                <td class="success">✅</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>100.0</td>
+                <td>67.00%</td>
+                <td>74.84</td>
+            </tr>
+
+            <tr>
+                <td>MAGRPO-E20</td>
+                <td class="success">✅</td>
+                <td>✅</td>
+                <td>✅</td>
+                <td>100.0</td>
+                <td>67.00%</td>
+                <td>84.45</td>
+            </tr>
+
+        </table>
+        <h3>Visualisations</h3>
+        <img src="critic\critic_01_reward.png" alt="Graph 1">
+        <img src="critic\critic_02_time.png" alt="Graph 2">
+        <img src="critic\critic_03_quality.png" alt="Graph 3">
+        <img src="critic\critic_04_metrics.png" alt="Graph 4">
+        <img src="critic\critic_05_quality_components.png" alt="Graph 5">
+
+    </div>
+
+    <div class="summary">
+        <h2>📊 Graphiques Globaux</h2>
+        <img src="global_01_reward_comparison.png" alt="Global Graph">
+        <img src="global_02_quality_comparison.png" alt="Global Graph">
+        <img src="global_03_success_rate.png" alt="Global Graph">
+
+    </div>
+    <footer style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666;">
+        <p>Rapport généré automatiquement par comprehensive_evaluation.py</p>
+    </footer>
+</body>
+</html>

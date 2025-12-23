@@ -10,6 +10,15 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from agents.base_agents import OrchestratorAgent, ResearcherAgent, CodeWriterAgent, CriticAgent
 import json
 import time
+import os
+try:
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+except Exception:
+    pd = None
+    plt = None
+    sns = None
 
 def test_agent_with_checkpoint(agent_name: str, query: str, checkpoint_type: str, epoch: int = None):
     """
@@ -72,12 +81,16 @@ def test_agent_with_checkpoint(agent_name: str, query: str, checkpoint_type: str
         start_time = time.time()
         result = agent.act(query, fast_mode=False)
         elapsed = time.time() - start_time
-        
-        # Métriques
+
+        # Métriques de base
         is_json = isinstance(result, dict)
         has_expected_keys = False
-        
+        num_keys = 0
+        delegated_agent = None
+
         if is_json:
+            # Nombre de clés / structure
+            num_keys = len(result.keys())
             # Vérifier les clés attendues selon l'agent
             expected_keys = {
                 "orchestrator": ["delegated_agent", "instruction"],
@@ -87,13 +100,35 @@ def test_agent_with_checkpoint(agent_name: str, query: str, checkpoint_type: str
             }
             keys = expected_keys.get(agent_name, [])
             has_expected_keys = all(k in result for k in keys) if keys else True
-        
+            # Délégation (utile pour l'orchestrator)
+            delegated_agent = result.get("delegated_agent") if isinstance(result.get("delegated_agent"), str) else None
+
+        # Tenter d'extraire un reward fourni par le modèle (si présent)
+        reward_value = None
+        if isinstance(result, dict):
+            for k in ("reward", "reward_score", "magrpo_reward", "score"):
+                if k in result:
+                    try:
+                        reward_value = float(result[k])
+                        break
+                    except Exception:
+                        pass
+
+        # Si pas de reward réel, construire un proxy (0-100)
+        if reward_value is None:
+            reward_value = 0.0
+            reward_value += 40.0 if is_json else 0.0
+            reward_value += 60.0 if has_expected_keys else 0.0
+
         return {
             "success": True,
             "result": result,
             "is_json": is_json,
             "has_expected_keys": has_expected_keys,
-            "time": elapsed
+            "time": elapsed,
+            "reward": reward_value,
+            "num_keys": num_keys,
+            "delegated_agent": delegated_agent
         }
     except Exception as e:
         return {
@@ -129,19 +164,108 @@ def compare_agents(agent_name: str, query: str, epochs: list = [10, 15, 20]):
     
     for name, result in results.items():
         print(f"{name.upper()}:")
-        if result["success"]:
+        if result.get("success"):
             print(f"  ✅ Succès")
-            print(f"  📝 JSON valide: {result['is_json']}")
+            print(f"  📝 JSON valide: {result.get('is_json')}")
             print(f"  🔑 Clés correctes: {result.get('has_expected_keys', 'N/A')}")
-            print(f"  ⏱️  Temps: {result['time']:.2f}s")
+            print(f"  ⏱️  Temps: {result.get('time', 0.0):.2f}s")
+            print(f"  🎯 Reward (proxy/real): {result.get('reward', 'N/A')}")
             if result.get('result'):
                 result_str = str(result['result'])
-                if len(result_str) > 100:
-                    result_str = result_str[:100] + "..."
+                if len(result_str) > 200:
+                    result_str = result_str[:200] + "..."
                 print(f"  📄 Résultat: {result_str}")
         else:
             print(f"  ❌ Échec: {result.get('error', 'Unknown error')}")
         print()
+    
+    # Générer un tableau récapitulatif & graphiques si pandas/matplotlib disponibles
+    try:
+        if pd is None or plt is None or sns is None:
+            print("⚠️ Visualisation désactivée : installez pandas, matplotlib et seaborn pour voir tableaux/graphiques.")
+            return results
+
+        rows = []
+        for ckpt_name, res in results.items():
+            row = {
+                "checkpoint": ckpt_name,
+                "success": bool(res.get("success", False)),
+                "is_json": bool(res.get("is_json", False)),
+                "has_expected_keys": bool(res.get("has_expected_keys", False)),
+                "time_s": float(res.get("time", 0.0) or 0.0),
+                "reward": float(res.get("reward", 0.0) or 0.0),
+                "num_keys": int(res.get("num_keys", 0) or 0),
+                "delegated_agent": res.get("delegated_agent")
+            }
+            rows.append(row)
+
+        df = pd.DataFrame(rows).set_index("checkpoint")
+        out_dir = os.path.join("outputs", agent_name)
+        os.makedirs(out_dir, exist_ok=True)
+        csv_path = os.path.join(out_dir, f"{agent_name}_comparison_summary.csv")
+        df.to_csv(csv_path)
+        print(f"📁 Tableau sauvegardé: {csv_path}")
+
+        sns.set(style="whitegrid")
+        # Reward bar
+        plt.figure(figsize=(8,4))
+        sns.barplot(x=df.index, y="reward", data=df.reset_index(), palette="viridis")
+        plt.title(f"{agent_name} - Reward comparatif")
+        plt.ylabel("Reward (0-100)")
+        plt.xlabel("Checkpoint")
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        reward_png = os.path.join(out_dir, f"{agent_name}_reward.png")
+        plt.savefig(reward_png)
+        plt.close()
+        print(f"📊 Graph sauvegardé: {reward_png}")
+
+        # Time bar
+        plt.figure(figsize=(8,4))
+        sns.barplot(x=df.index, y="time_s", data=df.reset_index(), palette="magma")
+        plt.title(f"{agent_name} - Temps de réponse (s)")
+        plt.ylabel("Temps (s)")
+        plt.xlabel("Checkpoint")
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        time_png = os.path.join(out_dir, f"{agent_name}_time.png")
+        plt.savefig(time_png)
+        plt.close()
+        print(f"📊 Graph sauvegardé: {time_png}")
+
+        # Structure (num_keys)
+        plt.figure(figsize=(8,4))
+        sns.barplot(x=df.index, y="num_keys", data=df.reset_index(), palette="cool")
+        plt.title(f"{agent_name} - Structure: nombre de clés dans la sortie")
+        plt.ylabel("Nombre de clés")
+        plt.xlabel("Checkpoint")
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        struct_png = os.path.join(out_dir, f"{agent_name}_structure.png")
+        plt.savefig(struct_png)
+        plt.close()
+        print(f"📊 Graph sauvegardé: {struct_png}")
+
+        # Delegation distribution (si champs présents)
+        if df["delegated_agent"].notnull().any():
+            plt.figure(figsize=(6,4))
+            deleg_counts = df["delegated_agent"].fillna("None").value_counts()
+            sns.barplot(x=deleg_counts.index, y=deleg_counts.values, palette="Set2")
+            plt.title(f"{agent_name} - Distribution des agents délégués")
+            plt.ylabel("Count")
+            plt.xlabel("Delegated agent")
+            plt.xticks(rotation=45)
+            plt.tight_layout()
+            del_png = os.path.join(out_dir, f"{agent_name}_delegation.png")
+            plt.savefig(del_png)
+            plt.close()
+            print(f"📊 Graph sauvegardé: {del_png}")
+
+        # Afficher tableau résumé
+        print("\n📋 Tableau récapitulatif:")
+        print(df)
+    except Exception as e:
+        print(f"⚠️ Erreur lors de la visualisation: {e}")
     
     return results
 

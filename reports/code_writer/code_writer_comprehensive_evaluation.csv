@@ -1,0 +1,5 @@
+checkpoint,success,is_json,has_expected_keys,time_s,reward,num_keys,format_valid,content_relevance,completeness,quality_score,delegated_agent
+SFT,True,True,True,27.60625171661377,100.0,3,True,0.0,1.0,0.67,
+MAGRPO-E10,True,True,True,390.50406074523926,100.0,2,True,0.15384615384615385,1.0,0.7207692307692308,
+MAGRPO-E15,True,True,True,350.2866086959839,100.0,2,True,0.15384615384615385,1.0,0.7207692307692308,
+MAGRPO-E20,True,True,True,392.6339817047119,100.0,2,True,0.15384615384615385,1.0,0.7207692307692308,
