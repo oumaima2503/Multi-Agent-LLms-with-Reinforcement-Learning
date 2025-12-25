@@ -1,0 +1,38 @@
+{
+  "agent_name": "critic",
+  "base_model": "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+  "training_config": {
+    "num_train_epochs": 1,
+    "per_device_train_batch_size": 1,
+    "per_device_eval_batch_size": 1,
+    "gradient_accumulation_steps": 8,
+    "learning_rate": 0.0002,
+    "optimizer": "paged_adamw_32bit",
+    "lr_scheduler": "cosine",
+    "warmup_steps": 12,
+    "fp16": true,
+    "bf16": false
+  },
+  "peft_config": {
+    "r": 64,
+    "lora_alpha": 16,
+    "lora_dropout": 0.1,
+    "target_modules": [
+      "k_proj",
+      "o_proj",
+      "v_proj",
+      "q_proj"
+    ]
+  },
+  "dataset_info": {
+    "dataset_path": "/kaggle/input/processed-sft/processed_sft/critic_sft.jsonl",
+    "training_samples": 246,
+    "validation_samples": 28,
+    "eval_split": 0.1
+  },
+  "training_results": {
+    "training_loss": 1.3211783286063903,
+    "training_steps": 31,
+    "training_epochs": null
+  }
+}

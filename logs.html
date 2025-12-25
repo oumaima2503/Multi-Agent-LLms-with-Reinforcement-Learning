@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Complet - Analyse de Session</title>
+    <style>
+        :root {
+            --bg: #0b0e14;
+            --card-bg: #161b22;
+            --border: #30363d;
+            --text: #c9d1d9;
+            --orchestrator: #ffa657;
+            --codewriter: #7ee787;
+            --error: #ff7b72;
+            --blue: #58a6ff;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Consolas', 'Monaco', monospace;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.4;
+        }
+
+        h1 { text-align: center; color: var(--blue); }
+        .session-header { background: #21262d; padding: 10px; border-radius: 5px; margin-bottom: 20px; border: 1px solid var(--border); }
+
+        .analytics-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .tours-grid {
+            display: grid;
+            grid-template-columns: 1fr; /* Une colonne pour laisser la place aux longs logs */
+            gap: 25px;
+        }
+
+        .tour-box {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .tour-header {
+            background: #2d333b;
+            padding: 12px 20px;
+            font-weight: bold;
+            font-size: 1.1em;
+            border-bottom: 2px solid var(--blue);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .tour-content {
+            padding: 20px;
+        }
+
+        .log-section {
+            margin-bottom: 20px;
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-left: 3px solid #444;
+        }
+
+        .agent-label {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .label-orc { background: rgba(255, 166, 87, 0.2); color: var(--orchestrator); }
+        .label-cw { background: rgba(126, 231, 135, 0.2); color: var(--codewriter); }
+        .label-err { background: rgba(248, 123, 114, 0.2); color: var(--error); }
+
+        pre {
+            background: #010409;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            color: #d1d5db;
+            white-space: pre-wrap; /* Garde les retours à la ligne */
+            word-break: break-all;
+            font-size: 12px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .status-msg { color: #8b949e; font-style: italic; margin: 10px 0; }
+        .highlight { color: var(--blue); }
+
+        .fatal-error-zone {
+            border: 2px solid var(--error);
+            padding: 20px;
+            margin-top: 40px;
+            border-radius: 10px;
+            background: rgba(255, 123, 114, 0.05);
+            text-align: center;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 10px; }
+
+        /* Style spécifique pour le CODE PYTHON NORMAL */
+        .python-block {
+            background: #0d1117;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #38761d;
+            color: #e6edf3;
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            overflow-x: auto;
+            margin: 15px 0;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .py-k { color: var(--python-keyword); } /* keywords */
+        .py-f { color: var(--python-def); }     /* functions */
+        .py-s { color: var(--python-str); }     /* strings */
+        .py-c { color: var(--python-comment); font-style: italic; } /* comments */
+    </style>
+</head>
+<body>
+
+    <div class="session-header">
+         Nouvelle session: écrire une fonction pour trouver le max d'une liste
+    </div>
+
+    <div class="analytics-container">
+        <div class="stat-card"><b style="color:var(--blue)">06/10</b><br><small>TOURS</small></div>
+        <div class="stat-card"><b style="color:var(--codewriter)">CODE_WRITER</b><br><small>DERNIER AGENT</small></div>
+        <div class="stat-card"><b style="color:var(--error)">6 ERRORS</b><br><small>BOUCLE DÉTECTÉE</small></div>
+        <div class="stat-card"><b style="color:var(--error)">STOPPED</b><br><small>FINAL STATE</small></div>
+    </div>
+
+    <div class="tours-grid">
+
+        <div class="tour-box">
+            <div class="tour-header">Tour 1/10 <span> ORCHESTRATOR</span></div>
+            <div class="tour-content">
+                <div class="log-section">
+                    <b> État actuel (Inclus répétitions log) :</b>
+                    <pre>User: écrire une fonction pour trouver le max d'une liste
+User: écrire une fonction pour trouver le ...
+ Nouvelle session: écrire une fonction pour trouver le max d'une liste
+User: écrire une fonction pour trouver le ...
+(Répété selon log source...)</pre>
+                </div>
+                <span class="agent-label label-orc">RÉPONSE ORCHESTRATOR</span>
+                <pre>{
+  "delegated_agent": "CodeWriter",
+  "instruction": "Create a Python script that finds the largest element in an array.",
+  "final_answer": ""
+}</pre>
+                <div class="status-msg highlight"> Transition vers: CODE_WRITER</div>
+                <p> Instruction: Create a Python script that finds the largest element in an array....</p>
+            </div>
+        </div>
+
+        <div class="tour-box">
+            <div class="tour-header">Tour 2/10 <span> CODE_WRITER</span></div>
+            <div class="tour-content">
+                <div class="log-section">
+                    <b> État actuel :</b>
+                    <pre>Create a Python script that finds the largest element in an array....</pre>
+                </div>
+                <div class="status-msg"> Génération en cours...</div>
+                <span class="agent-label label-cw">RÉPONSE CODE_WRITER</span>
+               <pre class="python-block">
+<span class="py-k">import</span> numpy <span class="py-k">as</span> np <span class="py-c"># For sorting arrays</span>
+<span class="py-k">from</span> math <span class="py-k">import</span> sqrt <span class="py-c"># For calculating square root</span>
+
+<span class="py-k">def</span> <span class="py-f">getMaximumValueFromUnSortedList</span>(unsortedArray):
+    maxVal = float(<span class="py-s">"-inf"</span>)
+    indexOfLargestElement = -1
+    
+    <span class="py-k">for</span> i <span class="py-k">in</span> range(len(unsortedArray)):
+        currentVal = unsortedArray[i]
+        <span class="py-k">if</span> currentVal > maxVal:
+            maxVal = currentVal
+            indexOfLargestElement = i
+                  
+    <span class="py-k">return</span> maxVal, indexOfLargestElement
+
+<span class="py-k">if</span> __name__ == <span class="py-s">'__main__'</span>:
+    <span class="py-k">try</span>:
+        <span class="py-k">with</span> open(<span class="py-s">'inputDataFile'</span>, <span class="py-s">'r'</span>) <span class="py-k">as</span> fp:
+            rawInputData = json.load(fp)[<span class="py-s">0</span>][<span class="py-s">'data'</span>]
+    <span class="py-k">except</span> FileNotFoundError:
+        print(<span class="py-s">"Invalid Input Data File."</span>)
+        exit()</pre>
+                <div class="status-msg highlight"> Retour à l'orchestrator avec le résultat</div>
+            </div>
+        </div>
+
+       <div class="tour-box">
+    <div class="tour-header">
+        <span>Tour 3/10  ORCHESTRATOR</span>
+        <span class="agent-tag">Context Sync</span>
+    </div>
+    <div class="tour-content">
+        <div class="log-section">
+            <b> État actuel (Historique cumulé) :</b>
+            <pre class="raw-log">User: écrire une fonction pour trouver le max d'une liste
+[ORCHESTRATOR_INSTRUCTION]: Create a Pytho...</pre>
+        </div>
+
+        <span class="agent-label label-orc">RÉPONSE ORCHESTRATOR (EXTRACTION DU CODE)</span>
+        
+        <pre class="raw-log" style="margin-bottom: 0; border-bottom: none; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">{
+  "delegated_agent": "CodeWriter",
+  "instruction": "User: écrire une fonction pour trouver le max d'une liste ... [CODE_WRITER]: { \"python_code\": </pre>
+
+        <pre class="python-block" style="margin: 0; border-radius: 0; border-left: 4px solid var(--orchestrator);">
+<span class="py-k">import</span> numpy <span class="py-k">as</span> np <span class="py-c"># For sorting arrays</span>
+<span class="py-k">from</span> math <span class="py-k">import</span> sqrt <span class="py-c"># For calculating square root</span>
+
+<span class="py-k">def</span> <span class="py-f">getMaximumValueFromUnSortedList</span>(unsortedArray):
+    maxVal = float(<span class="py-s">"-inf"</span>)
+    indexOfLargestElement = -1
+    ndimensions = len(np.shape(unsortedArray))
+        
+    <span class="py-k">for</span> I <span class="py-k">in</span> range(len(unsortedArray)):
+        currentVal = unsortedArray[i]
+        <span class="py-k">if</span> currentVal > maxVal:
+            maxVal = currentVal
+            indexOfLargeElemenet = i
+                  
+    <span class="py-k">return</span> maxVal, indexOfLaergestElement
+
+<span class="py-k">if</span> __name__ == <span class="py-s">'__main__'</span>:
+    <span class="py-k">try</span>:
+        <span class="py-k">with</span> open(<span class="py-s">'inputDataFile'</span>, <span class="py-s">'r'</span>) <span class="py-k">as</span> fp:
+            rawInputData = json.load(fp)[<span class="py-s">0</span>][<span class="py-s">'data'</span>]
+    <span class="py-k">except</span> FileNotFoundError:
+        print(<span class="py-s">"Invalid Input Data File."</span>) 
+        exit()</pre>
+
+        <pre class="raw-log" style="margin-top: 0; border-top: none; border-top-left-radius: 0; border-top-right-radius: 0;">  \"result_explanation\": \"Here's a possible solution...\" }
+  [CODE_WRITER_RESULT]: (Contenu identique répété...),
+  "final_answer": ""
+}</pre>
+
+        <div class="status-msg highlight"> Transition vers: CODE_WRITER</div>
+    </div>
+</div>
+
+        <div class="tour-box">
+            <div class="tour-header">Tour 4/10 <span style="color:var(--error)"> CODE_WRITER ERROR</span></div>
+            <div class="tour-content">
+                <span class="agent-label label-err">ACTION_ERROR</span>
+                <pre>{
+  "num_dimenion": 3,
+  "arr_size": 7,
+  "min_arsurm": 2,
+  "result_explanation": "",
+  "action_type": "ERROR",
+  "error_message": "CodeWriter action missing required keys (python_code, result_explanation)."
+}</pre>
+                <div class="status-msg highlight"> Retour à l'orchestrator avec le résultat</div>
+            </div>
+        </div>
+
+        <div class="tour-box">
+    <div class="tour-header">
+        <span>Tour 5/10  ORCHESTRATOR</span>
+        <span class="agent-tag">Recursive History</span>
+    </div>
+    <div class="tour-content">
+        <div class="log-section">
+            <b> État actuel :</b>
+            <pre class="raw-log">User: écrire une fonction pour trouver le max d'une liste
+[ORCHESTRATOR_INSTRUCTION]: écrire une fon...</pre>
+        </div>
+
+        
+        <span class="agent-label label-orc"> RÉPONSE ORCHESTRATOR</span>
+
+        <pre class="raw-log" style="margin-bottom: 0; border-bottom: none; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">{
+  "delegated_agent": "CodeWriter",
+  "instruction": "User: écrire une fonction pour trouver le max d'une liste\n[ORCHESTRATOR_INSTRUCTION]: écrire une fonction pour trouver le max d'une liste\n[ORCHESTRATOR_INSTRUCTION]: Create a Python script that finds the largest element in an array.\n[CODE_WRITER]: {\"python_code\": </pre>
+
+        <pre class="python-block" style="margin: 0; border-radius: 0; border-left: 4px solid var(--orchestrator);">
+<span class="py-k">import</span> numpy <span class="py-k">as</span> np <span class="py-c"># For sorting arrays</span>
+<span class="py-k">from</span> math <span class="py-k">import</span> sqrt <span class="py-c"># For calculating square root</span>
+
+<span class="py-k">def</span> <span class="py-f">getMaximumValueFromUnSortedList</span>(unsortedArray):
+    maxVal = float(<span class="py-s">"-inf"</span>)
+    indexOfLargestElement = -1
+    ndimensions = len(np.shape(unsortedArray))
+        
+    <span class="py-k">for</span> I <span class="py-k">in</span> range(len(unsortedArray)):
+        currentVal = unsortedArray[i]
+            
+        <span class="py-k">if</span> currentVal > maxVal:
+            maxVal = currentVal
+            indexOfLargeElemenet = i
+                  
+    <span class="py-k">return</span> maxVal, indexOfLaergestElement
+
+<span class="py-k">if</span> __name__ == <span class="py-s">'__main__'</span>:
+    <span class="py-c"># Read input data file</span>
+    <span class="py-k">try</span>:
+        <span class="py-k">with</span> open(<span class="py-s">'inputDataFile'</span>, <span class="py-s">'r'</span>) <span class="py-k">as</span> fp:
+            rawInputData = json.load(fp)[<span class="py-s">0</span>][<span class="py-s">'data'</span>]
+    <span class="py-k">except</span> FileNotFoundError:
+        print(<span class="py-s">"Invalid Input Data File."</span>)
+        exit()
+    
+    <span class="py-c"># Logique de traitement des dimensions...</span>
+    numDimension = int(rawInputData[<span class="py-s">'numDimension'</span>])
+    <span class="py-c"># ... suite du script</span></pre>
+
+        <pre class="raw-log" style="margin-top: 0; border-top: none; border-top-left-radius: 0; border-top-right-radius: 0;">  \"result_explanation\": \"Here's a possible solution...\"}
+  [CODE_WRITER]: {\"num_dimenion\": 3, \"arr_size\": 7, \"action_type\": \"ERROR\", \"error_message\": \"CodeWriter action missing required keys...\"}
+  [CODE_WRITER_RESULT]: {\"num_dimenion\": 3, \"arr_size\": 7, \"action_type\": \"ERROR\"...}
+  "final_answer": ""
+}</pre>
+
+        <div class="status-msg highlight"> Transition vers: CODE_WRITER</div>
+        <div class="raw-log" style="background: transparent; border: none; padding: 0;">
+ Instruction: écrire une fonction pour trouver le max d'une liste
+[ORCHESTRATOR_INSTRUCTION]: écrire une fonction ...
+        </div>
+    </div>
+</div>
+
+        <div class="tour-box">
+            <div class="tour-header">Tour 6/10 <span style="color:var(--error)"> FATAL ERROR</span></div>
+            <div class="tour-content">
+                <span class="agent-label label-cw">CODE_WRITER</span>
+                <p><b>Dernière réponse corrompue détectée :</b></p>
+                <pre>{
+  "result_explanation": "",
+  "action_type": "ERROR",
+  "error_message": "CodeWriter action missing required keys (python_code, result_explanation)."
+  "action_type": "ERROR",
+  "error_message": "CodeWriter action missing required keys (python_code, result_explanation)."
+  "error_message": "CodeWriter action missing required keys (python_code, result_explanation)."
+  "keys (python_code, result_explanation)."
+}</pre>
+                <div class="fatal-error-zone">
+                    <h3 style="color:var(--error); margin-top:0;"> STOP_CRITICAL</h3>
+                    <p><b>Trop d'erreurs (6), arrêt du workflow</b></p>
+                     </div>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>
