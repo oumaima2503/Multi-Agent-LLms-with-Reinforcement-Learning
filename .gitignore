@@ -1,0 +1,14 @@
+# Models & checkpoints
+*.pt
+*.pth
+*.ckpt
+*.bin
+*.safetensors
+
+# Datasets
+data/
+datasets/
+
+# Cache
+__pycache__/
+.cache/
