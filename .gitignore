@@ -4,6 +4,7 @@
 *.ckpt
 *.bin
 *.safetensors
+*.md
 
 # Datasets
 data/
