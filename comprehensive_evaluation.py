@@ -1,13 +1,4 @@
-"""
-Script Complet d'Évaluation Globale - Combine tous les tests et évaluations.
-Génère rapports, tableaux analytiques et visuels pour tous les agents.
-
-Usage:
-    pip install pandas matplotlib seaborn plotly nbformat
-    python comprehensive_evaluation.py --all --output reports
-    python comprehensive_evaluation.py --agent orchestrator --output reports
-"""
-
+#Évaluation Globale - Combine tous les tests et évaluations.
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -45,9 +36,8 @@ try:
 except Exception:
     HAS_NBFORMAT = False
 
-# ============================================================================
+
 # CONFIGURATION GLOBALE
-# ============================================================================
 
 AGENTS = ["orchestrator", "researcher", "code_writer", "critic"]
 EPOCHS = [10, 15, 20]
@@ -58,12 +48,11 @@ TEST_QUERIES = {
     "critic": "Évalue ceci : 'Le smartphone est cher mais puissant'."
 }
 
-# ============================================================================
 # FONCTIONS D'ÉVALUATION
-# ============================================================================
+
 
 def test_agent_checkpoint(agent_name: str, query: str, checkpoint_type: str, epoch: int = None):
-    """Teste un agent avec un checkpoint (SFT ou MAGRPO)."""
+
     agent_classes = {
         "orchestrator": OrchestratorAgent,
         "researcher": ResearcherAgent,
@@ -76,7 +65,7 @@ def test_agent_checkpoint(agent_name: str, query: str, checkpoint_type: str, epo
     
     agent = agent_classes[agent_name]()
 
-    # Définir chemin
+   
     if checkpoint_type == "sft":
         agent.lora_path = f"checkpoints/{agent_name}_lora"
     elif checkpoint_type == "magrpo":
@@ -85,7 +74,6 @@ def test_agent_checkpoint(agent_name: str, query: str, checkpoint_type: str, epo
     else:
         return {"success": False, "error": f"Type inconnu: {checkpoint_type}"}
 
-    # Fallback
     if not os.path.exists(agent.lora_path):
         fallback = f"checkpoints/{agent_name}_lora"
         if os.path.exists(fallback):
@@ -180,21 +168,21 @@ def evaluate_response_quality(agent_name: str, response: dict, query: str) -> di
     return scores
 
 def run_comprehensive_evaluation(agent_name: str, output_dir: str = "reports"):
-    """Évaluation complète pour un agent."""
+   
     os.makedirs(output_dir, exist_ok=True)
     agent_dir = os.path.join(output_dir, agent_name)
     os.makedirs(agent_dir, exist_ok=True)
 
     query = TEST_QUERIES[agent_name]
     print(f"\n{'='*80}")
-    print(f"📊 ÉVALUATION COMPLÈTE : {agent_name.upper()}")
+    print(f"     ÉVALUATION COMPLÈTE : {agent_name.upper()}")
     print(f"{'='*80}")
     print(f"Requête: {query}\n")
 
     all_data = []
 
-    # 1. Test SFT
-    print("🔵 Test SFT...")
+    
+    print("     Test SFT...")
     sft_result = test_agent_checkpoint(agent_name, query, "sft")
     sft_quality = evaluate_response_quality(agent_name, sft_result.get("result", {}), query)
     
@@ -216,7 +204,7 @@ def run_comprehensive_evaluation(agent_name: str, output_dir: str = "reports"):
 
     # 2. Test MAGRPO (toutes les époques)
     for epoch in EPOCHS:
-        print(f"🟢 Test MAGRPO Epoch {epoch}...")
+        print(f" Test MAGRPO Epoch {epoch}...")
         magrpo_result = test_agent_checkpoint(agent_name, query, "magrpo", epoch)
         magrpo_quality = evaluate_response_quality(agent_name, magrpo_result.get("result", {}), query)
         
@@ -238,7 +226,7 @@ def run_comprehensive_evaluation(agent_name: str, output_dir: str = "reports"):
 
     # Créer DataFrame
     if not HAS_PANDAS:
-        print("⚠️ pandas non disponible, skip visualizations")
+        print("     pandas non disponible, skip visualizations")
         return None
 
     df = pd.DataFrame(all_data)
@@ -246,26 +234,25 @@ def run_comprehensive_evaluation(agent_name: str, output_dir: str = "reports"):
     # Sauvegarder CSV
     csv_path = os.path.join(agent_dir, f"{agent_name}_comprehensive_evaluation.csv")
     df.to_csv(csv_path, index=False)
-    print(f"\n✅ CSV sauvegardé: {csv_path}")
+    print(f"\n  CSV sauvegardé: {csv_path}")
 
     # Afficher tableau
     print(f"\n{'='*80}")
-    print("📋 TABLEAU D'ÉVALUATION")
+    print("     TABLEAU D'ÉVALUATION")
     print(f"{'='*80}\n")
     print(df.to_string(index=False))
 
     return df, agent_dir
 
 def generate_visualizations(df, agent_name: str, agent_dir: str):
-    """Génère tous les graphiques."""
+    
     if not HAS_MATPLOTLIB or df is None:
         return
 
     print(f"\n{'='*80}")
-    print("📊 GÉNÉRATION DES VISUALISATIONS")
+    print("     GÉNÉRATION DES VISUALISATIONS")
     print(f"{'='*80}\n")
 
-    # 1. Comparaison Reward
     fig, ax = plt.subplots(figsize=(10, 6))
     sns.barplot(x="checkpoint", y="reward", data=df, palette="viridis", ax=ax)
     plt.title(f"{agent_name} - Comparaison Reward (SFT vs MAGRPO)")
@@ -276,9 +263,9 @@ def generate_visualizations(df, agent_name: str, agent_dir: str):
     png_path = os.path.join(agent_dir, f"{agent_name}_01_reward.png")
     plt.savefig(png_path, dpi=100)
     plt.close()
-    print(f"✅ Graph reward: {png_path}")
+    print(f"     Graph reward: {png_path}")
 
-    # 2. Comparaison Temps
+    
     fig, ax = plt.subplots(figsize=(10, 6))
     sns.barplot(x="checkpoint", y="time_s", data=df, palette="magma", ax=ax)
     plt.title(f"{agent_name} - Temps de Réponse")
@@ -289,9 +276,9 @@ def generate_visualizations(df, agent_name: str, agent_dir: str):
     png_path = os.path.join(agent_dir, f"{agent_name}_02_time.png")
     plt.savefig(png_path, dpi=100)
     plt.close()
-    print(f"✅ Graph temps: {png_path}")
+    print(f"     Graph temps: {png_path}")
 
-    # 3. Qualité Globale
+    
     fig, ax = plt.subplots(figsize=(10, 6))
     sns.barplot(x="checkpoint", y="quality_score", data=df, palette="RdYlGn", ax=ax)
     plt.title(f"{agent_name} - Score de Qualité Global")
@@ -303,9 +290,9 @@ def generate_visualizations(df, agent_name: str, agent_dir: str):
     png_path = os.path.join(agent_dir, f"{agent_name}_03_quality.png")
     plt.savefig(png_path, dpi=100)
     plt.close()
-    print(f"✅ Graph qualité: {png_path}")
+    print(f"     Graph qualité: {png_path}")
 
-    # 4. Métrics multiples (heatmap)
+    
     metrics_cols = ["is_json", "has_expected_keys", "format_valid", "completeness"]
     metrics_data = df[["checkpoint"] + metrics_cols].set_index("checkpoint").astype(int)
     
@@ -317,9 +304,9 @@ def generate_visualizations(df, agent_name: str, agent_dir: str):
     png_path = os.path.join(agent_dir, f"{agent_name}_04_metrics.png")
     plt.savefig(png_path, dpi=100)
     plt.close()
-    print(f"✅ Heatmap métriques: {png_path}")
+    print(f"     Heatmap métriques: {png_path}")
 
-    # 5. Distribution des composantes de qualité
+    
     fig, axes = plt.subplots(1, 3, figsize=(14, 5))
     
     for idx, col in enumerate(["content_relevance", "completeness", "quality_score"]):
@@ -333,7 +320,7 @@ def generate_visualizations(df, agent_name: str, agent_dir: str):
     png_path = os.path.join(agent_dir, f"{agent_name}_05_quality_components.png")
     plt.savefig(png_path, dpi=100)
     plt.close()
-    print(f"✅ Graph composantes qualité: {png_path}")
+    print(f"     Graph composantes qualité: {png_path}")
 
 def generate_global_report(all_dfs: dict, output_dir: str):
     """Génère un rapport global comparatif."""
@@ -341,10 +328,10 @@ def generate_global_report(all_dfs: dict, output_dir: str):
         return
 
     print(f"\n{'='*80}")
-    print("📊 RAPPORT GLOBAL COMPARATIF")
+    print("     RAPPORT GLOBAL COMPARATIF")
     print(f"{'='*80}\n")
 
-    # Combiner tous les DataFrames
+    
     combined_data = []
     for agent_name, df in all_dfs.items():
         df_copy = df.copy()
@@ -353,13 +340,13 @@ def generate_global_report(all_dfs: dict, output_dir: str):
     
     global_df = pd.concat(combined_data, ignore_index=True)
 
-    # Sauvegarder CSV global
+    
     csv_path = os.path.join(output_dir, "global_comprehensive_evaluation.csv")
     global_df.to_csv(csv_path, index=False)
-    print(f"✅ CSV global: {csv_path}")
+    print(f"     CSV global: {csv_path}")
 
-    # Statistiques globales
-    print("\n📈 STATISTIQUES GLOBALES PAR AGENT:")
+    
+    print("\n     STATISTIQUES GLOBALES PAR AGENT:")
     print(f"{'Agent':<20} {'Reward Moyen':<15} {'Temps Moyen':<15} {'Qualité Moy.':<15}")
     print("-" * 65)
     
@@ -372,7 +359,7 @@ def generate_global_report(all_dfs: dict, output_dir: str):
             print(f"{agent_name:<20} {avg_reward:<15.2f} {avg_time:<15.2f} {avg_quality:<15.2f}")
 
     # Comparison SFT vs MAGRPO globale
-    print("\n📊 COMPARAISON SFT vs MAGRPO (Global):")
+    print("\n     COMPARAISON SFT vs MAGRPO (Global):")
     sft_data = global_df[global_df["checkpoint"] == "SFT"]
     magrpo_data = global_df[global_df["checkpoint"].str.contains("MAGRPO")]
     
@@ -392,7 +379,7 @@ def generate_global_report(all_dfs: dict, output_dir: str):
 
     # Générer visualisations globales
     if HAS_MATPLOTLIB:
-        print("\n📊 Génération des graphiques globaux...")
+        print("\n     Génération des graphiques globaux...")
 
         # 1. Reward par agent et checkpoint
         fig, ax = plt.subplots(figsize=(12, 6))
@@ -407,7 +394,7 @@ def generate_global_report(all_dfs: dict, output_dir: str):
         png_path = os.path.join(output_dir, "global_01_reward_comparison.png")
         plt.savefig(png_path, dpi=100)
         plt.close()
-        print(f"✅ Graph comparaison reward: {png_path}")
+        print(f"     Graph comparaison reward: {png_path}")
 
         # 2. Qualité par agent
         fig, ax = plt.subplots(figsize=(12, 6))
@@ -423,7 +410,7 @@ def generate_global_report(all_dfs: dict, output_dir: str):
         png_path = os.path.join(output_dir, "global_02_quality_comparison.png")
         plt.savefig(png_path, dpi=100)
         plt.close()
-        print(f"✅ Graph comparaison qualité: {png_path}")
+        print(f"     Graph comparaison qualité: {png_path}")
 
         # 3. Taux de succès
         fig, ax = plt.subplots(figsize=(12, 6))
@@ -440,10 +427,10 @@ def generate_global_report(all_dfs: dict, output_dir: str):
         png_path = os.path.join(output_dir, "global_03_success_rate.png")
         plt.savefig(png_path, dpi=100)
         plt.close()
-        print(f"✅ Graph taux de succès: {png_path}")
+        print(f"     Graph taux de succès: {png_path}")
 
 def generate_html_report(all_dfs: dict, output_dir: str):
-    """Génère un rapport HTML interactif."""
+   
     html_content = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -467,11 +454,11 @@ def generate_html_report(all_dfs: dict, output_dir: str):
     </style>
 </head>
 <body>
-    <h1>📊 Rapport Complet d'Évaluation - SFT vs MAGRPO</h1>
+    <h1>     Rapport Complet d'Évaluation - SFT vs MAGRPO</h1>
     <p>Généré: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
     
     <div class="summary">
-        <h2>📈 Vue d'Ensemble Globale</h2>
+        <h2>     Vue d'Ensemble Globale</h2>
         <div class="metric-box">
             <div class="metric-value">{len(all_dfs)}</div>
             <div class="metric-label">Agents Évalués</div>
@@ -497,7 +484,7 @@ def generate_html_report(all_dfs: dict, output_dir: str):
             
             html_content += f"""
     <div class="agent-section">
-        <h2>🤖 Agent: {agent_name.upper()}</h2>
+        <h2> Agent: {agent_name.upper()}</h2>
         <div class="metric-box">
             <div class="metric-value">{avg_reward:.1f}</div>
             <div class="metric-label">Reward Moyen</div>
@@ -527,9 +514,9 @@ def generate_html_report(all_dfs: dict, output_dir: str):
                 html_content += f"""
             <tr>
                 <td>{row['checkpoint']}</td>
-                <td class="{success_class}">{'✅' if row['success'] else '❌'}</td>
-                <td>{'✅' if row['is_json'] else '❌'}</td>
-                <td>{'✅' if row['has_expected_keys'] else '❌'}</td>
+                <td class="{success_class}">{'    ' if row['success'] else '    '}</td>
+                <td>{'    ' if row['is_json'] else '    '}</td>
+                <td>{'    ' if row['has_expected_keys'] else '    '}</td>
                 <td>{row['reward']:.1f}</td>
                 <td>{row['quality_score']:.2%}</td>
                 <td>{row['time_s']:.2f}</td>
@@ -555,7 +542,7 @@ def generate_html_report(all_dfs: dict, output_dir: str):
 
     html_content += """
     <div class="summary">
-        <h2>📊 Graphiques Globaux</h2>
+        <h2>     Graphiques Globaux</h2>
 """
     # Ajouter images globales
     import glob
@@ -575,11 +562,10 @@ def generate_html_report(all_dfs: dict, output_dir: str):
     html_path = os.path.join(output_dir, "evaluation_report.html")
     with open(html_path, 'w', encoding='utf-8') as f:
         f.write(html_content)
-    print(f"\n✅ Rapport HTML: {html_path}")
+    print(f"\n     Rapport HTML: {html_path}")
 
-# ============================================================================
 # FONCTION PRINCIPALE
-# ============================================================================
+
 
 def main(agents: list = None, output_dir: str = "reports", offline: bool = False):
     """Exécute l'évaluation complète."""
@@ -591,7 +577,7 @@ def main(agents: list = None, output_dir: str = "reports", offline: bool = False
         os.environ["HUGGINGFACE_HUB_OFFLINE"] = "1"
 
     print("="*80)
-    print("🚀 ÉVALUATION GLOBALE COMPLÈTE")
+    print("     ÉVALUATION GLOBALE COMPLÈTE")
     print("="*80)
     print(f"Agents: {', '.join(agents)}")
     print(f"Checkpoints: SFT + MAGRPO (epochs {EPOCHS})")
@@ -614,9 +600,9 @@ def main(agents: list = None, output_dir: str = "reports", offline: bool = False
         generate_html_report(all_dfs, output_dir)
 
     print(f"\n{'='*80}")
-    print("✅ ÉVALUATION COMPLÈTE TERMINÉE")
+    print("     ÉVALUATION COMPLÈTE TERMINÉE")
     print(f"{'='*80}")
-    print(f"\n📁 Rapports sauvegardés dans: {output_dir}/")
+    print(f"\n     Rapports sauvegardés dans: {output_dir}/")
     print("\nFichiers générés:")
     print("  - CSV par agent: {agent}/")
     print("  - Graphiques par agent: {agent}/*_*.png")

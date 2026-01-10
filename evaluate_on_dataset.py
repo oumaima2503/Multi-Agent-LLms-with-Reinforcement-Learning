@@ -1,8 +1,3 @@
-"""
-Évalue les agents MAGRPO sur un dataset de test.
-Compare SFT vs MAGRPO quantitativement.
-"""
-
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -13,18 +8,9 @@ from test_magrpo_agent import test_magrpo_agent
 from Compared_sft_magrpo.compare_sft_magrpo import test_agent_with_checkpoint
 
 def evaluate_on_dataset(agent_name: str, dataset_path: str, checkpoint_type: str = "magrpo", epoch: int = 20, max_samples: int = None):
-    """
-    Évalue un agent sur un dataset.
-    
-    Args:
-        agent_name: orchestrator, researcher, code_writer, critic
-        dataset_path: Chemin vers le dataset JSONL
-        checkpoint_type: 'sft' ou 'magrpo'
-        epoch: Époque pour MAGRPO (10, 15, 20)
-        max_samples: Limiter le nombre d'échantillons (None = tous)
-    """
+ 
     if not os.path.exists(dataset_path):
-        print(f"❌ Dataset non trouvé: {dataset_path}")
+        print(f"     Dataset non trouvé: {dataset_path}")
         return None
     
     # Charger le dataset
@@ -34,7 +20,7 @@ def evaluate_on_dataset(agent_name: str, dataset_path: str, checkpoint_type: str
     # Limiter si nécessaire
     if max_samples and len(dataset) > max_samples:
         dataset = dataset[:max_samples]
-        print(f"⚠️  Dataset limité à {max_samples} échantillons pour l'évaluation")
+        print(f"      Dataset limité à {max_samples} échantillons pour l'évaluation")
     
     metrics = {
         "total": len(dataset),
@@ -45,7 +31,7 @@ def evaluate_on_dataset(agent_name: str, dataset_path: str, checkpoint_type: str
         "errors": []
     }
     
-    print(f"\n📊 Évaluation {agent_name.upper()} ({checkpoint_type})")
+    print(f"\n    Évaluation {agent_name.upper()} ({checkpoint_type})")
     print(f"Dataset: {len(dataset)} échantillons\n")
     
     # Clés attendues par agent
@@ -113,31 +99,31 @@ def compare_sft_vs_magrpo(agent_name: str, dataset_path: str, epochs: list = [10
     Compare SFT vs MAGRPO pour un agent.
     """
     print(f"\n{'='*70}")
-    print(f"📊 Comparaison SFT vs MAGRPO : {agent_name.upper()}")
+    print(f"    Comparaison SFT vs MAGRPO : {agent_name.upper()}")
     print(f"{'='*70}\n")
     
     # Évaluer SFT
-    print("🔵 Évaluation SFT...")
+    print("     Évaluation SFT...")
     sft_metrics = evaluate_on_dataset(agent_name, dataset_path, "sft", max_samples=max_samples)
     
     # Évaluer MAGRPO pour chaque époque
     magrpo_results = {}
     for epoch in epochs:
-        print(f"\n🟢 Évaluation MAGRPO Epoch {epoch}...")
+        print(f"\n     Évaluation MAGRPO Epoch {epoch}...")
         magrpo_metrics = evaluate_on_dataset(agent_name, dataset_path, "magrpo", epoch=epoch, max_samples=max_samples)
         if magrpo_metrics:
             magrpo_results[epoch] = magrpo_metrics
     
     # Afficher les résultats
     print(f"\n{'='*70}")
-    print("📈 Résultats Comparatifs")
+    print("    Résultats Comparatifs")
     print(f"{'='*70}\n")
     
     if sft_metrics:
-        # En-tête
+        
         header = f"{'Métrique':<25} {'SFT':<15} "
         for epoch in epochs:
-            header += f"MAGRPO E{epoch}:<15}     "
+            header += f"{ 'MAGRPO E{epoch}':<15}     "
         print(header.rstrip())
         print(f"{'-'*70}")
         
@@ -221,7 +207,7 @@ if __name__ == "__main__":
         metrics = evaluate_on_dataset(args.agent, args.dataset, args.checkpoint, args.epoch, args.max_samples)
         if metrics:
             print(f"\n{'='*70}")
-            print("📊 Résultats")
+            print("    Résultats")
             print(f"{'='*70}\n")
             print(f"Taux de succès: {metrics['success_rate']:.2%}")
             print(f"JSON valide: {metrics['json_rate']:.2%}")

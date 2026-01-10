@@ -1,8 +1,3 @@
-"""
-Script pour tester un agent individuel avec un checkpoint MAGRPO.
-Usage: python test_magrpo_agent.py
-"""
-
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -11,16 +6,9 @@ from agents.base_agents import OrchestratorAgent, ResearcherAgent, CodeWriterAge
 import json
 
 def test_magrpo_agent(agent_name: str, query: str, epoch: int = 20):
-    """
-    Teste un agent avec un checkpoint MAGRPO.
-    
-    Args:
-        agent_name: orchestrator, researcher, code_writer, critic
-        query: Requête de test
-        epoch: Époque du checkpoint (10, 15, 20)
-    """
+   
     print(f"\n{'='*60}")
-    print(f"🧪 Test Agent: {agent_name.upper()} (MAGRPO Epoch {epoch})")
+    print(f" Test Agent: {agent_name.upper()} (MAGRPO Epoch {epoch})")
     print(f"{'='*60}")
     print(f"Requête: {query}\n")
     
@@ -33,7 +21,7 @@ def test_magrpo_agent(agent_name: str, query: str, epoch: int = 20):
     }
     
     if agent_name not in agent_classes:
-        print(f"❌ Agent inconnu: {agent_name}")
+        print(f" Agent inconnu: {agent_name}")
         return None
     
     # Créer l'agent
@@ -54,28 +42,28 @@ def test_magrpo_agent(agent_name: str, query: str, epoch: int = 20):
     
     # Vérifier que le checkpoint existe
     if not os.path.exists(agent.lora_path):
-        print(f"❌ Checkpoint non trouvé: {agent.lora_path}")
+        print(f" Checkpoint non trouvé: {agent.lora_path}")
         print(f"   Vérifiez que le checkpoint MAGRPO existe à cet emplacement.")
         return None
     
     # Recharger le modèle
-    print(f"📦 Chargement du checkpoint: {agent.lora_path}")
+    print(f" Chargement du checkpoint: {agent.lora_path}")
     try:
         agent._load_model()
     except Exception as e:
-        print(f"❌ Erreur lors du chargement: {e}")
+        print(f" Erreur lors du chargement: {e}")
         return None
     
     # Tester
-    print(f"\n🔄 Génération de la réponse...")
+    print(f"\n Génération de la réponse...")
     try:
         result = agent.act(query, fast_mode=False)
-        print(f"\n✅ Résultat:")
+        print(f"\n Résultat:")
         print(json.dumps(result, indent=2, ensure_ascii=False))
         
         # Vérifier le format
         if isinstance(result, dict):
-            print(f"\n✅ Format JSON valide")
+            print(f"\n Format JSON valide")
             
             # Vérifier les clés attendues
             expected_keys = {
@@ -89,16 +77,16 @@ def test_magrpo_agent(agent_name: str, query: str, epoch: int = 20):
             if keys:
                 missing_keys = [k for k in keys if k not in result]
                 if missing_keys:
-                    print(f"⚠️  Clés manquantes: {missing_keys}")
+                    print(f"  Clés manquantes: {missing_keys}")
                 else:
-                    print(f"✅ Toutes les clés attendues sont présentes")
+                    print(f" Toutes les clés attendues sont présentes")
         else:
-            print(f"\n⚠️  Format non-JSON")
+            print(f"\n Format non-JSON")
         
         return result
             
     except Exception as e:
-        print(f"\n❌ Erreur: {e}")
+        print(f"\n Erreur: {e}")
         import traceback
         traceback.print_exc()
         return None
@@ -133,7 +121,7 @@ if __name__ == "__main__":
     else:
         # Mode interactif
         print("="*60)
-        print("🧪 Test des Agents MAGRPO")
+        print(" Test des Agents MAGRPO")
         print("="*60)
         print("\nOptions:")
         print("1. Tester tous les agents: python test_magrpo_agent.py --all")

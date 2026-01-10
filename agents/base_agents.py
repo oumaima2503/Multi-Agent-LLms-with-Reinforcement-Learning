@@ -5,26 +5,21 @@ import re
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import PeftModel, LoraConfig
 
-# Configuration du Modèle et de l'environnement
-# IMPORTANT: Ce modèle doit correspondre à celui utilisé pour l'entraînement LoRA
+
 MODEL_NAME = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-# Chemin de base OBLIGATOIRE où les checkpoints SFT (LoRA) sont sauvegardés
+
 CHECKPOINT_BASE = "checkpoints/" 
 
-# ==============================================================================
+
 # CLASSE DE BASE
-# ==============================================================================
 
 class BaseAgent:
-    """
-    Classe de base pour tous les agents. 
-    Gère le chargement du modèle (avec LoRA), le tokenizer, et le parsing JSON.
-    """
+ 
     def __init__(self, name: str, system_prompt: str, lora_folder: str):
         self.name = name
         self.system_prompt = system_prompt
-        # Le chemin LoRA complet (e.g., 'drive/MyDrive/checkpoints/orchestrator_lora')
+       
         self.lora_path = os.path.join(CHECKPOINT_BASE, lora_folder) 
         self.tokenizer = None
         self.model = None
@@ -32,13 +27,13 @@ class BaseAgent:
         self._load_model()
 
     def _load_model(self):
-        """Charge le modèle de base et applique les poids LoRA entraînés."""
+        
         print(f"\n--- Chargement de l'agent {self.name} ---")
         print(f"Modèle de base: {MODEL_NAME}")
         print(f"Device: {DEVICE}")
         
         if not os.path.isdir(self.lora_path):
-            print(f"⚠️ AVERTISSEMENT: Dossier LoRA non trouvé : {self.lora_path}")
+            print(f"     AVERTISSEMENT: Dossier LoRA non trouvé : {self.lora_path}")
             print("Tentative de chargement du modèle de base uniquement (vérifiez le chemin SFT).")
             # Fallback : Charge le modèle de base si les poids LoRA sont manquants
             self.model = AutoModelForCausalLM.from_pretrained(
@@ -67,13 +62,11 @@ class BaseAgent:
                 if DEVICE == "cpu":
                     base_model = base_model.to(DEVICE)
                 
-                # 2. Chargement du config LoRA avec gestion des incompatibilités de version
-                # On charge le JSON manuellement pour filtrer les paramètres non reconnus
+                
                 with open(adapter_config_path, 'r') as f:
                     config_dict = json.load(f)
                 
-                # Paramètres essentiels pour LoraConfig (on ignore les nouveaux paramètres non reconnus)
-                # Extraction des paramètres essentiels uniquement
+                
                 essential_params = {
                     'r': config_dict.get('r', 64),
                     'lora_alpha': config_dict.get('lora_alpha', 16),
@@ -84,16 +77,12 @@ class BaseAgent:
                     'inference_mode': config_dict.get('inference_mode', True)
                 }
                 
-                # 3. Créer un LoraConfig avec seulement les paramètres essentiels
-                # Cela évite les erreurs avec les nouvelles clés non reconnues par les anciennes versions de peft
                 lora_config = LoraConfig(**essential_params)
                 
-                # 4. Utiliser la méthode standard PEFT pour charger l'adapter
-                # On crée un dossier temporaire avec un config nettoyé
                 import tempfile
                 import shutil
                 with tempfile.TemporaryDirectory() as temp_dir:
-                    # Créer un config nettoyé sans les paramètres problématiques
+                   
                     cleaned_config = {k: v for k, v in essential_params.items()}
                     cleaned_config['peft_type'] = 'LORA'
                     if 'base_model_name_or_path' in config_dict:
@@ -103,7 +92,7 @@ class BaseAgent:
                     with open(temp_config_path, 'w') as f:
                         json.dump(cleaned_config, f, indent=2)
                     
-                    # Copier les fichiers de poids (adapter_model.safetensors ou adapter_model.bin)
+                    
                     adapter_model_path = os.path.join(self.lora_path, "adapter_model.safetensors")
                     if not os.path.exists(adapter_model_path):
                         adapter_model_path = os.path.join(self.lora_path, "adapter_model.bin")
@@ -117,28 +106,26 @@ class BaseAgent:
                             f"Recherché: adapter_model.safetensors et adapter_model.bin"
                         )
                     
-                    # Utiliser PeftModel.from_pretrained avec le dossier temporaire (config nettoyé)
-                    # Cela charge correctement les poids avec les bons préfixes
                     try:
                         peft_model = PeftModel.from_pretrained(base_model, temp_dir)
-                        print(f"   ✅ Poids LoRA chargés avec succès")
-                        # Fusionner les poids pour l'inférence (plus rapide)
+                        print(f"        Poids LoRA chargés avec succès")
+                        
                         self.model = peft_model.merge_and_unload()
                     except Exception as load_error:
-                        # Si ça échoue encore, essayer une approche alternative
+                        
                         error_str = str(load_error).lower()
                         if "alora_invocation_tokens" in error_str or "unexpected keyword" in error_str:
-                            print(f"   ⚠️ Tentative alternative de chargement (incompatibilité de version peft)")
-                            # Approche alternative: charger manuellement mais avec meilleure gestion
+                            print(f"        Tentative alternative de chargement (incompatibilité de version peft)")
+                            
                             from peft import get_peft_model
                             peft_model_alt = get_peft_model(base_model, lora_config)
-                            # Charger directement depuis le fichier original
+                            
                             if adapter_model_path.endswith('.safetensors'):
                                 from safetensors.torch import load_file as safe_load_file
                                 adapter_weights = safe_load_file(adapter_model_path)
                             else:
                                 adapter_weights = torch.load(adapter_model_path, map_location=DEVICE)
-                            # Les poids LoRA de PEFT ont généralement des clés sans préfixe
+                            
                             peft_model_alt.load_state_dict(adapter_weights, strict=False)
                             self.model = peft_model_alt.merge_and_unload()
                         else:
@@ -163,14 +150,11 @@ class BaseAgent:
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
         self.tokenizer.padding_side = "left"
-        print(f"✅ Modèle {self.name} prêt.")
+        print(f"     Modèle {self.name} prêt.")
 
 
     def generate_response(self, user_prompt: str, max_retries: int = 2, fast_mode: bool = False) -> str:
-        """Génère la réponse complète du LLM en utilisant l'historique de chat."""
-        
-        # Le prompt complet inclut le System Prompt (rôle) et la requête utilisateur
-        # Ajouter une instruction finale très explicite pour forcer le JSON
+       
         enhanced_user_prompt = (
             f"{user_prompt}\n\n"
             "IMPORTANT: Your response MUST be a valid JSON object starting with {{ and ending with }}. "
@@ -181,7 +165,7 @@ class BaseAgent:
             {"role": "user", "content": enhanced_user_prompt}
         ]
         
-        # Utilisation du chat template pour formater correctement le prompt
+        
         try:
             input_ids = self.tokenizer.apply_chat_template(
                 full_prompt, 
@@ -190,8 +174,7 @@ class BaseAgent:
                 add_generation_prompt=True
             ).to(DEVICE)
         except Exception as e:
-            # Fallback si apply_chat_template échoue
-            # Format manuel pour TinyLlama chat format
+            
             if hasattr(self.tokenizer, 'chat_template') and self.tokenizer.chat_template:
                 input_ids = self.tokenizer.apply_chat_template(
                     full_prompt, 
@@ -199,7 +182,7 @@ class BaseAgent:
                     return_tensors="pt"
                 ).to(DEVICE)
             else:
-                # Format simple si pas de template
+                
                 messages = ""
                 for msg in full_prompt:
                     role = msg["role"]
@@ -211,11 +194,11 @@ class BaseAgent:
                 messages += "<|assistant|>\n"
                 input_ids = self.tokenizer(messages, return_tensors="pt").input_ids.to(DEVICE)
 
-        # Mode rapide : réduire les paramètres pour accélérer
+       
         if fast_mode:
-            max_new_tokens = 256  # Moins de tokens à générer
-            max_retries = 0  # Pas de retry en mode rapide
-            do_sample = False  # Mode déterministe (plus rapide)
+            max_new_tokens = 256  
+            max_retries = 0  
+            do_sample = False  
             temperature = 0.1
             top_p = 0.7
         else:
@@ -224,54 +207,48 @@ class BaseAgent:
             temperature = 0.3
             top_p = 0.85
         
-        # Générer avec plusieurs tentatives si nécessaire
+        
         for attempt in range(max_retries + 1):
             try:
                 with torch.no_grad():
                     output = self.model.generate(
                         input_ids,
                         max_new_tokens=max_new_tokens,
-                        do_sample=do_sample if attempt == 0 else False,  # Déterministe après première tentative
-                        temperature=temperature if attempt == 0 else 0.1,  # Plus déterministe après première tentative
-                        top_p=top_p if attempt == 0 else 0.7,  # Plus focus après première tentative
-                        top_k=50 if not fast_mode else 20,  # Limiter les tokens candidats
+                        do_sample=do_sample if attempt == 0 else False, 
+                        temperature=temperature if attempt == 0 else 0.1,
+                        top_p=top_p if attempt == 0 else 0.7,  
+                        top_k=50 if not fast_mode else 20, 
                         pad_token_id=self.tokenizer.eos_token_id,
                         eos_token_id=self.tokenizer.eos_token_id,
-                        repetition_penalty=1.2 if fast_mode else 1.3,  # Éviter les répétitions
-                        no_repeat_ngram_size=2 if fast_mode else 3,  # Éviter les répétitions
+                        repetition_penalty=1.2 if fast_mode else 1.3,  
+                        no_repeat_ngram_size=2 if fast_mode else 3,  
                     )
             except Exception as e:
-                print(f"⚠️  Erreur lors de la génération (tentative {attempt + 1}): {e}")
+                print(f"      Erreur lors de la génération (tentative {attempt + 1}): {e}")
                 if attempt == max_retries:
-                    # Dernière tentative, retourner une réponse par défaut
+                  
                     return '{"error": "Génération échouée après plusieurs tentatives"}'
                 continue
 
-            # Décodage et nettoyage pour obtenir la réponse textuelle
+           
             response_text = self.tokenizer.decode(output[0, input_ids.shape[1]:], skip_special_tokens=True)
             response_text = response_text.strip()
             
-            # Vérifier si la réponse commence par { (bon signe)
+            
             if response_text.startswith('{'):
                 return response_text
             
-            # Si ce n'est pas la dernière tentative, continuer
             if attempt < max_retries:
                 continue
         
         return response_text
 
     def _clean_and_parse_json(self, raw_response: str) -> dict:
-        """
-        Fonction essentielle pour la Phase I: extraire et parser le JSON de la sortie LLM.
-        Utilise plusieurs stratégies pour extraire le JSON même s'il est partiel ou malformé.
-        """
-        # Nettoyer la réponse
+   
         cleaned = raw_response.strip()
         
-        # Stratégie 0: Si la réponse commence directement par {, essayer de parser directement
         if cleaned.startswith('{'):
-            # Trouver le dernier } correspondant en comptant les accolades
+           
             brace_count = 0
             end_pos = -1
             in_string = False
@@ -306,7 +283,7 @@ class BaseAgent:
                     if isinstance(action, dict):
                         return action
                 except json.JSONDecodeError as e:
-                    # Essayer de réparer les erreurs communes
+                    
                     json_str = self._try_fix_json(json_str)
                     if json_str:
                         try:
@@ -316,10 +293,10 @@ class BaseAgent:
                         except json.JSONDecodeError:
                             pass
         
-        # Stratégie 1: Chercher le premier { et le dernier } correspondant
+        
         first_brace = cleaned.find('{')
         if first_brace >= 0:
-            # Chercher le dernier } en comptant les accolades
+           
             brace_count = 0
             end_pos = -1
             in_string = False
@@ -355,7 +332,7 @@ class BaseAgent:
                     if isinstance(action, dict):
                         return action
                 except json.JSONDecodeError:
-                    # Essayer de réparer
+                    
                     json_str = self._try_fix_json(json_str)
                     if json_str:
                         try:
@@ -365,11 +342,9 @@ class BaseAgent:
                         except json.JSONDecodeError:
                             pass
         
-        # Stratégie 2: Chercher avec regex pour trouver des blocs JSON imbriqués
-        # Pattern amélioré qui gère mieux les chaînes avec guillemets échappés
         json_pattern = r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}'
         matches = list(re.finditer(json_pattern, cleaned, re.DOTALL))
-        # Essayer le plus grand match d'abord
+        
         for match in sorted(matches, key=lambda m: len(m.group(0)), reverse=True):
             json_str = match.group(0)
             try:
@@ -386,13 +361,12 @@ class BaseAgent:
                     except json.JSONDecodeError:
                         continue
         
-        # Stratégie 3: Essayer de construire un JSON à partir de patterns trouvés
-        # Chercher toutes les paires clé-valeur possibles
+        
         json_patterns = [
-            r'"(\w+)":\s*"([^"\\]*(?:\\.[^"\\]*)*)"',  # "key": "value" avec échappement
-            r'"(\w+)":\s*(\d+\.?\d*)',       # "key": number
-            r'"(\w+)":\s*(true|false|null)', # "key": boolean/null
-            r'"(\w+)":\s*\{',          # "key": {
+            r'"(\w+)":\s*"([^"\\]*(?:\\.[^"\\]*)*)"', 
+            r'"(\w+)":\s*(\d+\.?\d*)',      
+            r'"(\w+)":\s*(true|false|null)',
+            r'"(\w+)":\s*\{',          
         ]
         
         found_keys = {}
@@ -414,10 +388,10 @@ class BaseAgent:
                         found_keys[key] = value.encode().decode('unicode_escape')
         
         if found_keys:
-            # Si on a trouvé des clés, retourner un dict partiel
+            
             return found_keys
         
-        # Stratégie 4: Si aucune stratégie n'a fonctionné, lever une erreur
+       
         raise json.JSONDecodeError(
             "Aucun bloc JSON ({...}) trouvé dans la réponse.", 
             raw_response, 
@@ -425,30 +399,27 @@ class BaseAgent:
         )
     
     def _try_fix_json(self, json_str: str) -> str:
-        """Tente de réparer un JSON malformé avec des corrections communes."""
+        
         fixed = json_str.strip()
         
-        # Remplacer les guillemets simples par des doubles (si c'est du JSON)
-        # Seulement si on détecte un pattern de dictionnaire Python
-        if "'" in fixed and '"' not in fixed:
-            # Essayer de convertir les guillemets simples en doubles
-            # Mais attention aux chaînes avec apostrophes
-            fixed = re.sub(r"'(\w+)':", r'"\1":', fixed)  # Clés simples
-            fixed = re.sub(r":\s*'([^']*)'", r': "\1"', fixed)  # Valeurs simples
         
-        # Supprimer les trailing commas
+        if "'" in fixed and '"' not in fixed:
+           
+            fixed = re.sub(r"'(\w+)':", r'"\1":', fixed)  
+            fixed = re.sub(r":\s*'([^']*)'", r': "\1"', fixed)  
+        
+       
         fixed = re.sub(r',\s*}', '}', fixed)
         fixed = re.sub(r',\s*]', ']', fixed)
         
-        # Réparer les guillemets non fermés (approximation)
-        # Compter les guillemets non échappés
+       
         quote_count = len(re.findall(r'(?<!\\)"', fixed))
         if quote_count % 2 != 0:
-            # Ajouter un guillemet fermant à la fin si nécessaire
+           
             if not fixed.rstrip().endswith('"'):
                 fixed = fixed.rstrip() + '"'
         
-        # Essayer de fermer les accolades manquantes
+       
         open_braces = fixed.count('{')
         close_braces = fixed.count('}')
         if open_braces > close_braces:
@@ -457,38 +428,26 @@ class BaseAgent:
         return fixed
     
     def _camel_to_snake(self, name: str) -> str:
-        """Convertit camelCase en snake_case."""
-        # Insérer un underscore avant chaque majuscule suivie d'une minuscule
+        
         s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
-        # Insérer un underscore avant chaque majuscule précédée d'une minuscule ou d'un chiffre
+       
         s2 = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1)
         return s2.lower()
     
     def _normalize_boolean(self, value):
-        """Convertit string 'true'/'false' en boolean."""
+        
         if isinstance(value, str):
             value_lower = value.lower().strip()
             if value_lower in ['true', '1', 'yes', 'on']:
                 return True
             elif value_lower in ['false', '0', 'no', 'off', '']:
                 return False
-            # Gérer "true/false" comme string
+           
             if value_lower == 'true/false':
                 return True  # Par défaut
         return value
     
     def _normalize_json_keys(self, action: dict, key_mapping: dict = None) -> dict:
-        """
-        Normalise les clés JSON pour correspondre aux clés attendues.
-        Gère les fautes de frappe communes avec une approche de similarité.
-        
-        Args:
-            action: Dictionnaire avec clés potentiellement incorrectes
-            key_mapping: Mapping optionnel {variante: clé_attendue}
-        
-        Returns:
-            Dictionnaire avec clés normalisées
-        """
         normalized = {}
         
         # Mapping de fautes de frappe communes (typos)
@@ -525,29 +484,29 @@ class BaseAgent:
                         normalized_key = expected
                         break
                 
-                # Si pas trouvé, essayer camelCase → snake_case
+              
                 if normalized_key == key:
                     normalized_key = self._camel_to_snake(key)
                     # Vérifier si la version normalisée est dans le mapping
                     if normalized_key in key_mapping.values():
-                        pass  # OK
+                        pass  
                     else:
-                        # Essayer de trouver une correspondance proche (similarité simple)
+                       
                         for variant, expected in key_mapping.items():
-                            # Vérifier si les clés sont similaires (même préfixe/suffixe)
+                            
                             if (normalized_key.startswith(expected[:3]) or 
                                 expected.startswith(normalized_key[:3]) or
                                 normalized_key in expected or expected in normalized_key):
                                 normalized_key = expected
                                 break
             else:
-                # Pas de mapping : juste convertir camelCase → snake_case
+                
                 normalized_key = self._camel_to_snake(key)
-                # Vérifier quand même les fautes de frappe communes
+              
                 if normalized_key.lower() in common_typos:
                     normalized_key = common_typos[normalized_key.lower()]
             
-            # Normaliser les valeurs booléennes si nécessaire
+           
             if 'ok' in normalized_key.lower() or 'critique' in normalized_key.lower():
                 value = self._normalize_boolean(value)
             
@@ -556,30 +515,24 @@ class BaseAgent:
         return normalized
 
     def act(self, observation: str, fast_mode: bool = False) -> dict:
-        """
-        Méthode principale pour exécuter l'action de l'agent (génération + parsing).
-        
-        Args:
-            observation: Requête/instruction pour l'agent
-            fast_mode: Si True, utilise des paramètres optimisés pour la vitesse
-        """
+      
         raw_response = self.generate_response(observation, max_retries=0 if fast_mode else 2, fast_mode=fast_mode)
         
         try:
             action = self._clean_and_parse_json(raw_response)
-            # Les sous-classes feront la validation de structure spécifique
+           
             return action
         except (json.JSONDecodeError, ValueError) as e:
-            # Gestion des erreurs de parsing
+           
             return {
                 "action_type": "ERROR", 
                 "error_message": f"Erreur de format JSON/Validation: {e}", 
                 "raw_output": raw_response
             }
 
-# ==============================================================================
-# CLASSES DES AGENTS SPÉCIALISÉS
-# ==============================================================================
+
+# CLASSES DES AGENTS
+
 
 class OrchestratorAgent(BaseAgent):
     def __init__(self):
@@ -618,7 +571,7 @@ class OrchestratorAgent(BaseAgent):
         if action.get("action_type") == "ERROR":
             return action
         
-        # Mapping des clés pour normalisation (avec plus de variantes)
+       
         key_mapping = {
             'delegatedagent': 'delegated_agent',
             'delegated_agent': 'delegated_agent',
@@ -839,7 +792,7 @@ class CodeWriterAgent(BaseAgent):
         
         if code_lines:
             code = '\n'.join(code_lines).strip()
-            # Nettoyer le code (enlever les commentaires de début)
+            # Nettoyer les commentaires en début de code
             code = re.sub(r'^#.*?\n', '', code, flags=re.MULTILINE)
             explanation = text.replace(code, "").strip()[:200]
             return code, explanation if explanation else ""

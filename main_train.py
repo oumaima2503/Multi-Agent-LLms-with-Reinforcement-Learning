@@ -1,4 +1,3 @@
-# main_train.py  (MAGRPO integrated)
 import os
 import json
 import random
@@ -14,15 +13,14 @@ from marl_core.centralized_critic import CentralizedCritic
 from marl_core.magrpo_utils import encode_global_state, move_model_to_device, offload_model_to_cpu
 from marl_core.magrpo_trainer import MAGRPOTrainer
 
-# CONFIG
-# Basé sur l'article "LLM Collaboration with Multi-Agent Reinforcement Learning"
+
 BASE_MODEL_ID = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
-CHECKPOINTS_DIR = "checkpoints"  # Chemin vers les checkpoints SFT
-DATASET_PATH = "data/processed_sft/orchestrator_sft.jsonl"  # Dataset pour l'entraînement RL
+CHECKPOINTS_DIR = "checkpoints"  
+DATASET_PATH = "data/processed_sft/orchestrator_sft.jsonl"  
 AGENTS_LIST = ["orchestrator", "researcher", "code_writer", "critic"]
-TOTAL_EPOCHS = 10  # Commencez avec 10 époques (ajustez selon résultats)
-SAVE_FREQ = 5  # Sauvegarder toutes les 5 époques
-SAVE_FOLDER = "checkpoints/magrpo_rl"  # Dossier pour sauvegarder les checkpoints RL
+TOTAL_EPOCHS = 20  
+SAVE_FREQ = 5  
+SAVE_FOLDER = "checkpoints/magrpo_rl"  
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")

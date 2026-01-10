@@ -1,14 +1,3 @@
-"""
-Interface Streamlit interactive pour tester / comparer / évaluer
-SFT vs MAGRPO + Workflow Multi-Agent réel
-
-ROBUSTE :
-- JSON valide
-- JSON invalide
-- Texte libre
-- Debug complet
-"""
-
 import os
 import json
 import time
@@ -26,9 +15,9 @@ except Exception:
     MAGRPOMultiAgentSystem = None
 
 
-# ============================================================
+
 # CONFIG
-# ============================================================
+
 
 AGENTS = ["orchestrator", "researcher", "code_writer", "critic"]
 DEFAULT_EPOCHS = [10, 15, 20]
@@ -42,15 +31,12 @@ st.set_page_config(
 st.title("Multi-Agent Evaluation Interface")
 
 
-# ============================================================
+
 # UTILS ROBUSTES
-# ============================================================
+
 
 def safe_parse_output(raw):
-    """
-    Ne plante jamais.
-    Retourne toujours un dict exploitable.
-    """
+   
     if raw is None:
         return {
             "raw_output": "",
@@ -85,9 +71,7 @@ def safe_parse_output(raw):
 
 
 def safe_evaluate(agent, parsed_output, query):
-    """
-    Évaluation robuste : ne casse jamais l'UI
-    """
+    
     try:
         return evaluate_agent_response(agent, parsed_output, query)
     except Exception:
@@ -99,12 +83,6 @@ def safe_evaluate(agent, parsed_output, query):
 
 
 def extract_agent_outputs_from_history(history):
-    """
-    Version ULTRA-ROBUSTE
-    - history = list[str] (logs)
-    - capture TOUT texte / JSON / erreurs
-    - ne plante jamais
-    """
 
     outputs = []
     current_agent = "unknown"
@@ -156,9 +134,9 @@ def extract_agent_outputs_from_history(history):
     flush()
     return outputs
 
-# ============================================================
+
 # SIDEBAR
-# ============================================================
+
 
 with st.sidebar:
     st.header("⚙️ Paramètres")
@@ -175,9 +153,7 @@ with st.sidebar:
     st.caption("Même requête utilisée pour tous les tests.")
 
 
-# ============================================================
 # INPUT USER
-# ============================================================
 
 query = st.text_area(
     "Entrez votre requête",
@@ -188,9 +164,8 @@ query = st.text_area(
 run_btn = st.button(" Lancer l'évaluation")
 
 
-# ============================================================
 # EXECUTION
-# ============================================================
+
 
 if run_btn and query.strip():
 
@@ -205,9 +180,9 @@ if run_btn and query.strip():
 
         start_all = time.time()
 
-        # ============================
+        
         # SFT
-        # ============================
+        
         if run_sft:
             res = test_agent_with_checkpoint(agent, query, "sft")
             parsed = safe_parse_output(res.get("result"))
@@ -224,9 +199,9 @@ if run_btn and query.strip():
                 **q
             })
 
-        # ============================
-        # MAGRPO (single-agent)
-        # ============================
+        
+        # MAGRPO 
+
         if run_magrpo:
             for ep in epochs:
                 res = test_agent_with_checkpoint(agent, query, "magrpo", epoch=ep)
@@ -244,9 +219,8 @@ if run_btn and query.strip():
                     **q
                 })
 
-        # ============================
         # MULTI-AGENT WORKFLOW
-        # ============================
+    
         if run_multi_agent and MAGRPOMultiAgentSystem:
             system = MAGRPOMultiAgentSystem(
                 epoch=max(epochs) if epochs else 20,
@@ -279,18 +253,12 @@ if run_btn and query.strip():
 
     st.success(f" Évaluation terminée en {elapsed:.1f}s")
 
-
-    # ========================================================
     # DATAFRAMES
-    # ========================================================
 
     df_results = pd.DataFrame(results)
     df_agents = pd.DataFrame(multi_agent_outputs) if multi_agent_outputs else None
 
-
-    # ========================================================
     # TABS
-    # ========================================================
 
     tab_tables, tab_graphs, tab_agents, tab_trace = st.tabs([
         " Tables",
@@ -299,9 +267,7 @@ if run_btn and query.strip():
         " Analyse du flux"
     ])
 
-    # ========================================================
     # TAB TABLES
-    # ========================================================
 
     with tab_tables:
         st.subheader("Résultats SFT vs MAGRPO")
@@ -317,10 +283,8 @@ if run_btn and query.strip():
             st.subheader("Résultats Multi-Agent")
             st.dataframe(df_agents, width="stretch")
 
-    # ========================================================
     # TAB GRAPHES
-    # ========================================================
-
+    
     with tab_graphs:
         st.subheader("Reward par checkpoint")
         st.plotly_chart(
@@ -357,9 +321,8 @@ if run_btn and query.strip():
                 width="stretch"
             )
 
-    # ========================================================
     # TAB AGENTS
-    # ========================================================
+   
 
     with tab_agents:
         if df_agents is not None and not df_agents.empty:
@@ -378,9 +341,9 @@ if run_btn and query.strip():
         else:
             st.warning("Workflow exécuté mais aucune sortie capturée.")
 
-# ========================================================
+
 # TAB TRACE / ANALYSE COMPLETE
-# ========================================================
+
 
     with tab_trace:
         st.subheader(" Analyse complète du flux multi-agent")
@@ -400,7 +363,7 @@ if run_btn and query.strip():
                 # Détection des tours
                 if "Tour" in line and "/" in line:
                     if turn_buffer:
-                        with st.expander(f"🔄 {current_turn}", expanded=False):
+                        with st.expander(f"{current_turn}", expanded=False):
                             st.code("\n".join(turn_buffer), language="text")
 
                     current_turn = line.strip()
@@ -412,7 +375,7 @@ if run_btn and query.strip():
 
             # Dernier tour
             if turn_buffer:
-                with st.expander(f"🔄 {current_turn}", expanded=True):
+                with st.expander(f" {current_turn}", expanded=True):
                     st.code("\n".join(turn_buffer), language="text")
 
 

@@ -1,8 +1,3 @@
-"""
-Système multi-agent utilisant les checkpoints MAGRPO.
-Simule le workflow de collaboration entre agents.
-"""
-
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -45,29 +40,25 @@ def is_code_satisfactory(code: str) -> bool:
     return True
 
 class MAGRPOMultiAgentSystem:
-    """
-    Système multi-agent utilisant les checkpoints MAGRPO.
-    Simule le workflow de collaboration entre agents.
-    """
+ 
     def __init__(self, epoch: int = 20, fast_mode: bool = False, offline: bool = False):
         self.epoch = epoch
         self.agents = {}
         self.history = []
         self.current_agent = "orchestrator"
-        self.original_query = ""  # Stocker la requête originale
-        self.fast_mode = fast_mode  # Mode rapide pour accélérer la génération
+        self.original_query = ""  
+        self.fast_mode = fast_mode 
         self.offline = offline
-        # Si mode hors-ligne demandé, forcer transformers/huggingface en offline pour éviter downloads
+        
         if self.offline:
             os.environ["TRANSFORMERS_OFFLINE"] = "1"
             os.environ["HUGGINGFACE_HUB_OFFLINE"] = "1"
         
-        # Charger tous les agents
         self._load_agents()
     
     def _load_agents(self):
-        """Charge tous les agents avec les checkpoints MAGRPO (fallback SFT si nécessaire)"""
-        print("📦 Chargement des agents MAGRPO...")
+       
+        print("    Chargement des agents MAGRPO...")
 
         agent_configs = {
             "orchestrator": (OrchestratorAgent, "orchestrator"),
@@ -91,45 +82,45 @@ class MAGRPOMultiAgentSystem:
                 if os.path.exists(agent.lora_path):
                     try:
                         agent._load_model()
-                        print(f"   ✅ {name} chargé (MAGRPO)")
+                        print(f"     {name} chargé (MAGRPO)")
                     except Exception as e:
-                        print(f"   ⚠️  Erreur chargement MAGRPO pour {name}: {e}")
+                        print(f"       Erreur chargement MAGRPO pour {name}: {e}")
                         # tenter fallback SFT si disponible
                         if os.path.exists(sft_path):
                             agent.lora_path = sft_path
                             try:
                                 agent._load_model()
-                                print(f"   ✅ {name} chargé (SFT fallback)")
+                                print(f"     {name} chargé (SFT fallback)")
                             except Exception as e2:
-                                print(f"   ⚠️  Erreur chargement SFT pour {name}: {e2}")
+                                print(f"       Erreur chargement SFT pour {name}: {e2}")
                         else:
-                            print(f"   ⚠️  Aucun checkpoint SFT local trouvé pour {name}, utilisation instance par défaut")
+                            print(f"       Aucun checkpoint SFT local trouvé pour {name}, utilisation instance par défaut")
                 else:
                     # MAGRPO absent → essayer SFT fallback
                     if os.path.exists(sft_path):
                         agent.lora_path = sft_path
-                        print(f"   ⚠️  Checkpoint MAGRPO non trouvé, utilisation du SFT: {sft_path}")
+                        print(f"       Checkpoint MAGRPO non trouvé, utilisation du SFT: {sft_path}")
                         try:
                             agent._load_model()
-                            print(f"   ✅ {name} chargé (SFT)")
+                            print(f"     {name} chargé (SFT)")
                         except Exception as e:
-                            print(f"   ⚠️  Erreur chargement SFT pour {name}: {e}")
+                            print(f"       Erreur chargement SFT pour {name}: {e}")
                             print(f"   → {name} instancié sans weights")
                     else:
-                        print(f"   ⚠️  Checkpoint MAGRPO non trouvé: {magrpo_path}")
-                        print(f"   ⚠️  Aucun checkpoint SFT local trouvé: {sft_path}")
+                        print(f"       Checkpoint MAGRPO non trouvé: {magrpo_path}")
+                        print(f"       Aucun checkpoint SFT local trouvé: {sft_path}")
                         print(f"   → {name} instancié sans weights (offline fallback)")
 
                 # ajouter l'agent à la map quel que soit l'état du chargement
                 self.agents[name] = agent
 
             except Exception as e:
-                print(f"   ❌ Erreur inattendue lors du chargement de {name}: {e}")
+                print(f"        Erreur inattendue lors du chargement de {name}: {e}")
                 agent = agent_class()
                 self.agents[name] = agent
                 print(f"   → Utilisation de l'instance par défaut pour {name}")
 
-        print("✅ Agents chargés\n")
+        print("  Agents chargés\n")
     
     def reset(self, initial_query: str):
         """Réinitialise le système avec une nouvelle requête"""
@@ -137,12 +128,12 @@ class MAGRPOMultiAgentSystem:
         self.current_agent = "orchestrator"
         # Affecter la requête originale (fixe: était manquante)
         self.original_query = initial_query
-        print(f"\n🔄 Nouvelle session: {initial_query}\n")
+        print(f"\n     Nouvelle session: {initial_query}\n")
     
     def step(self):
         """Exécute une étape du workflow multi-agent"""
         if self.current_agent not in self.agents:
-            print(f"❌ Agent inconnu: {self.current_agent}")
+            print(f"     Agent inconnu: {self.current_agent}")
             return None, True
         
         agent = self.agents[self.current_agent]
@@ -171,29 +162,29 @@ class MAGRPOMultiAgentSystem:
                 # Si l'instruction ne contient pas de mots-clés de code, utiliser la requête originale
                 code_keywords = ['code', 'script', 'function', 'program', 'python', 'calculer', 'max', 'min', 'liste']
                 if not any(keyword in instruction.lower() for keyword in code_keywords):
-                    print(f"⚠️  Instruction semble incorrecte, utilisation de la requête originale")
+                    print(f"    Instruction semble incorrecte, utilisation de la requête originale")
                     instruction = self.original_query
             
             current_state = instruction
         
-        print(f"🤖 Agent actif: {self.current_agent.upper()}")
-        print(f"📝 État actuel: {current_state[:100]}...\n")
+        print(f" Agent actif: {self.current_agent.upper()}")
+        print(f" État actuel: {current_state[:100]}...\n")
         
         # Agent génère une action
         try:
             if self.fast_mode:
-                print(f"⏳ Génération en cours (mode rapide)...")
+                print(f" Génération en cours (mode rapide)...")
             else:
-                print(f"⏳ Génération en cours... (cela peut prendre 10-30 secondes avec TinyLlama sur CPU)")
+                print(f" Génération en cours... (cela peut prendre 10-30 secondes avec TinyLlama sur CPU)")
             
             # Génération avec gestion du timeout
             result = agent.act(current_state, fast_mode=self.fast_mode)
             
             if result is None:
-                print(f"❌ {self.current_agent.upper()} a retourné None")
+                print(f"     {self.current_agent.upper()} a retourné None")
                 return None, True
             
-            print(f"✅ Réponse de {self.current_agent}:")
+            print(f"  Réponse de {self.current_agent}:")
             print(json.dumps(result, indent=2, ensure_ascii=False))
             
             # Ajouter à l'historique
@@ -209,8 +200,8 @@ class MAGRPOMultiAgentSystem:
                     
                     # Si l'erreur est due à un JSON invalide, essayer d'extraire l'information
                     if "JSON" in error_msg and raw_output:
-                        print(f"⚠️  Orchestrator a généré du texte libre au lieu de JSON")
-                        print(f"💡 Tentative d'extraction d'information...")
+                        print(f"    Orchestrator a généré du texte libre au lieu de JSON")
+                        print(f" Tentative d'extraction d'information...")
                         
                         # Détecter automatiquement l'agent basé sur la requête originale
                         obs_lower = self.original_query.lower()
@@ -236,15 +227,15 @@ class MAGRPOMultiAgentSystem:
                         
                         if next_agent_key in self.agents:
                             self.current_agent = next_agent_key
-                            print(f"\n➡️  Transition automatique vers: {next_agent_key.upper()} (détection intelligente)")
-                            print(f"📋 Instruction: {instruction[:100]}...")
+                            print(f"\n  Transition automatique vers: {next_agent_key.upper()} (détection intelligente)")
+                            print(f"   Instruction: {instruction[:100]}...")
                             self.history.append(f"[ORCHESTRATOR_INSTRUCTION]: {instruction}")
                             return result, False
                     
                     # Si trop d'erreurs consécutives, terminer
                     error_count = sum(1 for entry in self.history if "ERROR" in entry or "action_type" in entry)
                     if error_count >= 3:
-                        print(f"\n⚠️  Trop d'erreurs consécutives ({error_count}), arrêt du workflow")
+                        print(f"\n    Trop d'erreurs consécutives ({error_count}), arrêt du workflow")
                         return result, True
                     
                     # Sinon, continuer
@@ -281,17 +272,17 @@ class MAGRPOMultiAgentSystem:
                         # Workflow terminé
                         final_answer = result.get("final_answer", "")
                         if final_answer:
-                            print(f"\n🏁 Workflow terminé")
-                            print(f"📝 Réponse finale: {final_answer}")
+                            print(f"\n     Workflow terminé")
+                            print(f"   Réponse finale: {final_answer}")
                         else:
-                            print(f"\n🏁 Workflow terminé (pas de réponse finale)")
+                            print(f"\n     Workflow terminé (pas de réponse finale)")
                         return result, True
                     elif next_agent_key and next_agent_key in self.agents:
                         # Vérifier si on a déjà un résultat satisfaisant de cet agent
                         has_valid_result = any("[CODE_VALID]: True" in entry for entry in self.history)
                         if has_valid_result and next_agent_key == "code_writer":
                             # On a déjà un code valide, terminer le workflow
-                            print(f"\n💡 Code valide déjà obtenu, workflow terminé")
+                            print(f"\n   Code valide déjà obtenu, workflow terminé")
                             # Récupérer le dernier résultat valide
                             last_result = None
                             for entry in reversed(self.history):
@@ -304,8 +295,8 @@ class MAGRPOMultiAgentSystem:
                                         pass
                             
                             if last_result:
-                                print(f"\n🏁 Workflow terminé (code Python valide obtenu)")
-                                print(f"📝 Code final:")
+                                print(f"\n     Workflow terminé (code Python valide obtenu)")
+                                print(f"     Code final:")
                                 code = last_result.get("python_code", "")
                                 print(f"```python\n{code[:300]}...\n```")
                                 return last_result, True
@@ -321,24 +312,24 @@ class MAGRPOMultiAgentSystem:
                         # Si l'instruction est vide ou semble incorrecte, utiliser la requête originale
                         if not instruction or len(instruction) < 5:
                             instruction = self.original_query
-                            print(f"\n⚠️  Instruction vide, utilisation de la requête originale")
+                            print(f"\n    Instruction vide, utilisation de la requête originale")
                         
                         # Pour CodeWriter, vérifier que l'instruction contient des mots-clés de code
                         if next_agent_key == "code_writer":
                             code_keywords = ['code', 'script', 'function', 'program', 'python', 'calculer', 'max', 'min', 'liste', 'array', 'tri', 'sort']
                             if not any(keyword in instruction.lower() for keyword in code_keywords):
-                                print(f"⚠️  Instruction ne semble pas être une tâche de code, utilisation de la requête originale")
+                                print(f"    Instruction ne semble pas être une tâche de code, utilisation de la requête originale")
                                 instruction = self.original_query
                         
-                        print(f"\n➡️  Transition vers: {next_agent_key.upper()}")
+                        print(f"\n   Transition vers: {next_agent_key.upper()}")
                         if instruction:
-                            print(f"📋 Instruction: {instruction[:100]}...")
+                            print(f"     Instruction: {instruction[:100]}...")
                         # Ajouter l'instruction à l'historique pour l'agent suivant
                         self.history.append(f"[ORCHESTRATOR_INSTRUCTION]: {instruction}")
                     else:
                         # Agent inconnu ou erreur, utiliser la détection intelligente
-                        print(f"\n⚠️  Agent délégué non reconnu: {delegated}")
-                        print(f"💡 Détection intelligente basée sur la requête...")
+                        print(f"\n    Agent délégué non reconnu: {delegated}")
+                        print(f"     Détection intelligente basée sur la requête...")
                         
                         # Détection automatique
                         obs_lower = self.original_query.lower()
@@ -346,11 +337,11 @@ class MAGRPOMultiAgentSystem:
                             next_agent_key = "code_writer"
                             instruction = self.original_query
                             self.current_agent = next_agent_key
-                            print(f"➡️  Transition automatique vers: {next_agent_key.upper()}")
-                            print(f"📋 Instruction: {instruction[:100]}...")
+                            print(f"      Transition automatique vers: {next_agent_key.upper()}")
+                            print(f"     Instruction: {instruction[:100]}...")
                             self.history.append(f"[ORCHESTRATOR_INSTRUCTION]: {instruction}")
                         else:
-                            print(f"➡️  Retour à l'orchestrator")
+                            print(f"      Retour à l'orchestrator")
                             self.current_agent = "orchestrator"
                 else:
                     self.current_agent = "orchestrator"
@@ -360,22 +351,22 @@ class MAGRPOMultiAgentSystem:
                 agent_result = json.dumps(result, ensure_ascii=False)
                 self.history.append(f"[{self.current_agent.upper()}_RESULT]: {agent_result}")
                 self.current_agent = "orchestrator"
-                print(f"\n➡️  Retour à l'orchestrator avec le résultat")
+                print(f"\n      Retour à l'orchestrator avec le résultat")
             
             return result, False
             
         except KeyboardInterrupt:
-            print(f"\n⚠️  Interruption par l'utilisateur")
+            print(f"\n    Interruption par l'utilisateur")
             return None, True
         except Exception as e:
-            print(f"❌ Erreur lors de l'exécution de {self.current_agent.upper()}: {e}")
+            print(f"     Erreur lors de l'exécution de {self.current_agent.upper()}: {e}")
             import traceback
             traceback.print_exc()
             # En cas d'erreur, retourner à l'orchestrator pour continuer
             if self.current_agent != "orchestrator":
                 self.current_agent = "orchestrator"
                 self.history.append(f"[ERROR]: {self.current_agent.upper()} a rencontré une erreur: {str(e)}")
-                print(f"➡️  Retour à l'orchestrator après erreur")
+                print(f"      Retour à l'orchestrator après erreur")
                 return None, False
             return None, True
     
@@ -391,7 +382,7 @@ class MAGRPOMultiAgentSystem:
             result, done = self.step()
             
             if done:
-                print(f"\n✅ Workflow terminé après {turn + 1} tours")
+                print(f"\n  Workflow terminé après {turn + 1} tours")
                 return result
             
             # Détecter les boucles infinies (même agent plusieurs fois de suite)
@@ -404,17 +395,17 @@ class MAGRPOMultiAgentSystem:
                             recent_agents.append(agent_name)
                 
                 if len(recent_agents) >= 4 and len(set(recent_agents)) == 1:
-                    print(f"\n⚠️  Boucle détectée (agent {recent_agents[0]} répété), arrêt du workflow")
+                    print(f"\n    Boucle détectée (agent {recent_agents[0]} répété), arrêt du workflow")
                     return result
             
             # Détecter trop d'erreurs
             error_count = sum(1 for entry in self.history if "ERROR" in entry or "action_type" in entry)
             if error_count >= 5:
-                print(f"\n⚠️  Trop d'erreurs ({error_count}), arrêt du workflow")
+                print(f"\n    Trop d'erreurs ({error_count}), arrêt du workflow")
                 return result
                 
             if turn >= max_turns - 1:
-                print(f"\n⚠️  Nombre maximum de tours atteint")
+                print(f"\n    Nombre maximum de tours atteint")
                 return result
         
         return None
@@ -438,7 +429,7 @@ if __name__ == "__main__":
     if args.interactive:
         # Mode interactif
         print("="*60)
-        print("🚀 Système Multi-Agent MAGRPO - Mode Interactif")
+        print("   Système Multi-Agent MAGRPO - Mode Interactif")
         print("="*60)
         print("\nTapez 'quit' pour quitter\n")
         
@@ -446,7 +437,7 @@ if __name__ == "__main__":
             query = input("Vous: ")
             
             if query.lower() in ['quit', 'exit', 'q']:
-                print("👋 Au revoir!")
+                print("     Au revoir!")
                 break
             
             if not query.strip():
@@ -460,14 +451,14 @@ if __name__ == "__main__":
     else:
         # Exemples par défaut
         print("="*60)
-        print("🚀 Système Multi-Agent MAGRPO")
+        print("     Système Multi-Agent MAGRPO")
         print("="*60)
         
         # Exemple 1
-        print("\n📋 Exemple 1: Analyse comparative")
+        print("\n     Exemple 1: Analyse comparative")
         result1 = system.run("Compare le Pixel 8 et l'iPhone 15", max_turns=5)
         
         # Exemple 2
-        print("\n\n📋 Exemple 2: Recherche et code")
+        print("\n\n     Exemple 2: Recherche et code")
         result2 = system.run("Trouve la date de sortie du Pixel 8 et crée un script pour calculer son prix avec remise", max_turns=6)
 
